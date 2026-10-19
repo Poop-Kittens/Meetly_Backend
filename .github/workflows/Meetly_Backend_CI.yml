@@ -42,6 +42,20 @@ jobs:
             - name: Push Docker image
               run: docker push ${{secrets.DOCKER_USERNAME}}/${{env.IMAGE_NAME}}:${{github.sha}}
 
+            - name: Install EF Core tools
+              run: dotnet tool install --global dotnet-ef
+
+            - name: Generate migration script
+              run: dotnet ef migrations script --idempotent -o migrate.sql
+              env:
+                  ConnectionStrings__DefaultConnection: "Server=localhost;Database=dummy;"
+
+            - name: Apply migrations to Azure SQL
+              uses: azure/sql-action@v2.3
+              with:
+                  connection-string: ${{secrets.AZURE_SQL_CONNECTION_STRING}}
+                  path: ./Meetly_Backend/migrate.sql
+
             - name: Deploy to Azure Web App
               uses: azure/webapps-deploy@v3
               with:

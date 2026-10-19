@@ -51,6 +51,19 @@ jobs:
                   ConnectionStrings__DefaultConnection: "Server=localhost;Database=dummy;"
 
             - name: Apply migrations to Azure SQL
+              id: migrate
+              continue-on-error: true
+              uses: azure/sql-action@v2.3
+              with:
+                  connection-string: ${{secrets.AZURE_SQL_CONNECTION_STRING}}
+                  path: ./Meetly_Backend/migrate.sql
+
+            - name: Wait for database to resume
+              if: steps.migrate.outcome == 'failure'
+              run: sleep 60
+
+            - name: Apply migrations to Azure SQL (retry)
+              if: steps.migrate.outcome == 'failure'
               uses: azure/sql-action@v2.3
               with:
                   connection-string: ${{secrets.AZURE_SQL_CONNECTION_STRING}}

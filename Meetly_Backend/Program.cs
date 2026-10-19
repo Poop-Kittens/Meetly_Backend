@@ -1,4 +1,4 @@
-using Meetly_Backend.DbContext;
+using Meetly_Backend.Data;
 using Meetly_Backend.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;

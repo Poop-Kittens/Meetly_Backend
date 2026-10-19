@@ -5,7 +5,11 @@ namespace Meetly_Backend.Models
     public class Category
     {
         public int Id { get; set; }
-        [Required, MinLength(2)]
+
+        [Required, MaxLength(50)]
         public string Title { get; set; } = string.Empty;
+
+        // Navigation properties
+        public List<Meeting> Meetings { get; set; } = [];
     }
 }

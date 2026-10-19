@@ -5,9 +5,18 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var connectionName = builder.Environment.IsDevelopment() ? "DevConnection" : "DefaultConnection";
+
 // Add services to the container.
-builder.Services.AddDbContext<MeetlyDbContext>(
-    options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddDbContext<MeetlyDbContext>(options =>
+{
+    options.UseSqlServer(builder.Configuration.GetConnectionString(connectionName),
+        sqlOptions => sqlOptions.EnableRetryOnFailure(
+            maxRetryCount: 2,
+            maxRetryDelay: TimeSpan.FromSeconds(30),
+            errorNumbersToAdd: null));
+});
+
 builder.Services.AddIdentity<User, IdentityRole>(options =>
 {
     options.Password.RequireDigit = true;
@@ -17,9 +26,10 @@ builder.Services.AddIdentity<User, IdentityRole>(options =>
 
     options.User.RequireUniqueEmail = true;
     options.SignIn.RequireConfirmedEmail = false;
+})
+.AddEntityFrameworkStores<MeetlyDbContext>()
+.AddDefaultTokenProviders();
 
-
-}).AddEntityFrameworkStores<MeetlyDbContext>().AddDefaultTokenProviders();
 builder.Services.AddAuthorization();
 
 builder.Services.AddControllers();
@@ -34,8 +44,8 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-   app.UseSwaggerUI();//här lägger vi till swagger
-   
+    app.UseSwaggerUI();//här lägger vi till swagger
+
     app.MapOpenApi();
 }
 

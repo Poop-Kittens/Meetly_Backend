@@ -47,6 +47,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();//här lägger vi till swagger
 
     app.MapOpenApi();
+    await DbSeeder.SeedAsync(app.Services);
 }
 
 app.UseHttpsRedirection();

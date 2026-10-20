@@ -50,5 +50,23 @@ namespace Meetly_Backend.Controllers
             //returnerar resultatet av tjänsten som ett ActionResult
             return result.ToActionResult(this);
         }
+
+        [Authorize]
+        [HttpDelete("Registration/{id}")]
+        public async Task<IActionResult> CancelRegistration(int id)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (userId == null)
+            {
+                return Unauthorized(); 
+            }
+
+            var result = await _meetingService.CancelRegistrationAsync(id, userId);
+
+            return result.ToActionResult(this);
+
+
+        }
     }
 }

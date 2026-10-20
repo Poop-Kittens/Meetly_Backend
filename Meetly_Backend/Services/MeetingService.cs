@@ -84,5 +84,24 @@ namespace Meetly_Backend.Services
             //returnerar ett ServiceResult som visar att mötet skapades korrekt
             return ServiceResult.Ok();
         }
+
+        public async Task<ServiceResult> CancelRegistrationAsync(int meetingId, string userId)
+        {
+            //letar efter en anmälan som matchar, med rätt meetup och rätt användare
+            var registration = await _ctx.MeetingParticipants
+                .FirstOrDefaultAsync(mp => mp.MeetingId == meetingId && mp.UserId == userId);
+
+            //om ingen anmälan hittas
+            if (registration == null)
+            {
+                return ServiceResult.NotFound("Du har ingen anmälan till detta möte");
+            }
+
+            _ctx.MeetingParticipants.Remove(registration);
+
+            await _ctx.SaveChangesAsync();
+
+            return ServiceResult.Ok();
+        }
     }
 }

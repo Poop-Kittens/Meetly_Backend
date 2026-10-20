@@ -8,5 +8,6 @@ namespace Meetly_Backend.Interfaces
         Task<ICollection<BasicMeetingResponse>> GetUpcomingMeetingsAsync();
         Task<ServiceResult<MeetingResponse>> GetDetailsByIdAsync(int id);
         Task<ServiceResult> CreateMeetingAsync(CreateMeetingRequestDTO dto, string hostId);
+        Task<ServiceResult> CancelRegistrationAsync(int meetingId, string userId);
     }
 }

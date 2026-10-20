@@ -25,4 +25,6 @@
         DateOnly? Date,
         string? Category
     );
+
+    public record SignUpInfo(DateTime Date, int RemainingSlots, bool AlreadyJoined);
 }

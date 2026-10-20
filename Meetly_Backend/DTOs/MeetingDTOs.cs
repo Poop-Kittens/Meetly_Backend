@@ -18,4 +18,6 @@
         int? Grade,
         string UserName
     );
+
+    public record SignUpInfo(DateTime Date, int RemainingSlots, bool AlreadyJoined);
 }

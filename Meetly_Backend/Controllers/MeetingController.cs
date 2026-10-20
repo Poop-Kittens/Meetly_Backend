@@ -1,8 +1,10 @@
 ﻿using Meetly_Backend.Common;
 using Meetly_Backend.DTOs;
 using Meetly_Backend.Interfaces;
-using Microsoft.AspNetCore.Http;
+using Meetly_Backend.Models;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
@@ -13,10 +15,12 @@ namespace Meetly_Backend.Controllers
     public class MeetingController : ControllerBase
     {
         private readonly IMeetingService _meetingService;
+        private readonly UserManager<User> _userManager;
 
-        public MeetingController(IMeetingService meetingService)
+        public MeetingController(IMeetingService meetingService, UserManager<User> userManager)
         {
             _meetingService = meetingService;
+            _userManager = userManager;
         }
 
         [HttpGet("upcoming")]
@@ -49,6 +53,19 @@ namespace Meetly_Backend.Controllers
 
             //returnerar resultatet av tjänsten som ett ActionResult
             return result.ToActionResult(this);
+        }
+
+        [Authorize]
+        [HttpPost("{id}/SignUp")]
+        public async Task<IActionResult> SignUp(int id)
+        {
+            var userId = _userManager.GetUserId(User); // Inbyggd metod i Microsoft Identity
+            if (userId == null)
+            {
+                return Unauthorized();
+            }
+            var result = await _meetingService.SignUpAsync(id, userId);
+            return Ok(result);
         }
     }
 }

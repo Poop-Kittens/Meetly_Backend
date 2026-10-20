@@ -122,5 +122,13 @@ namespace Meetly_Backend.Services
                 .Select(Mappings.BasicMeetingExpr)
                 .ToListAsync();
         }
+
+        public async Task<ICollection<BasicMeetingResponse>> GetUserMeetingsAsync(string userId)
+        {
+            return await _ctx.Meetings
+                .Where(m => m.Participants.Any(p => p.UserId == userId))
+                .Select(Mappings.BasicMeetingExpr)
+                .ToListAsync();
+        }
     }
 }

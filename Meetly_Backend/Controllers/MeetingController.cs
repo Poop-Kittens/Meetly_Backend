@@ -55,5 +55,11 @@ namespace Meetly_Backend.Controllers
             //returnerar resultatet av tjänsten som ett ActionResult
             return result.ToActionResult(this);
         }
+
+        [HttpGet("user/{userId}")]
+        public async Task<ActionResult<ICollection<BasicMeetingResponse>>> GetUser(string userId)
+        {
+            return Ok(await _meetingService.GetUserMeetingsAsync(userId));
+        }
     }
 }

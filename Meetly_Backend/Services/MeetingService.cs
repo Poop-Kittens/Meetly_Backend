@@ -1,4 +1,5 @@
-﻿using Meetly_Backend.Data;
+﻿using Meetly_Backend.Common;
+using Meetly_Backend.Data;
 using Meetly_Backend.DTOs;
 using Meetly_Backend.Interfaces;
 using Meetly_Backend.Mappers;
@@ -21,6 +22,22 @@ namespace Meetly_Backend.Services
                 .Where(m => m.Date > DateTime.Now)
                 .Select(Mappings.BasicMeetingExpr)
                 .ToListAsync();
+        }
+
+        public async Task<ServiceResult<MeetingResponse>> GetDetailsByIdAsync(int id)
+        {
+            var meeting = await _ctx.Meetings
+                 .AsNoTracking()
+                 .Where(m => m.Id == id)
+                 .Select(Mappings.MeetingExpr)
+                 .FirstOrDefaultAsync();
+
+            if (meeting is null)
+            {
+                return ServiceResult.NotFound<MeetingResponse>($"Meeting with id {id} was not found.");
+            }
+
+            return meeting;
         }
     }
 }

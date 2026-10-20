@@ -1,4 +1,5 @@
-﻿using Meetly_Backend.DTOs;
+﻿using Meetly_Backend.Common;
+using Meetly_Backend.DTOs;
 
 namespace Meetly_Backend.Interfaces
 {
@@ -6,5 +7,7 @@ namespace Meetly_Backend.Interfaces
     {
         Task<ICollection<BasicMeetingResponse>> GetUpcomingMeetingsAsync();
         Task<ICollection<BasicMeetingResponse>> SearchMeetingsAsync(MeetingSearchRequest request);
+        Task<ServiceResult<MeetingResponse>> GetDetailsByIdAsync(int id);
+        Task<ServiceResult> CreateMeetingAsync(CreateMeetingRequestDTO dto, string hostId);
     }
 }

@@ -1,6 +1,9 @@
-﻿using Meetly_Backend.DTOs;
+﻿using Meetly_Backend.Common;
+using Meetly_Backend.DTOs;
 using Meetly_Backend.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Meetly_Backend.Controllers
 {
@@ -25,6 +28,32 @@ namespace Meetly_Backend.Controllers
         public async Task<ActionResult<ICollection<BasicMeetingResponse>>> Search([FromQuery] MeetingSearchRequest request)
         {
             return Ok(await _meetingService.SearchMeetingsAsync(request));
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(int id)
+        {
+            var result = await _meetingService.GetDetailsByIdAsync(id);
+            return Ok(result.Data);
+        }
+
+        [Authorize]
+        [HttpPost("Create")]
+        public async Task<IActionResult> CreateMeeting([FromBody] CreateMeetingRequestDTO dto)
+        {
+            //hämtar användarens ID
+            var hostId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(hostId))
+            {
+                return Unauthorized("Användaren är inte inloggad.");
+            }
+
+            //anropar tjänsten för att skapa ett möte
+            var result = await _meetingService.CreateMeetingAsync(dto, hostId);
+
+            //returnerar resultatet av tjänsten som ett ActionResult
+            return result.ToActionResult(this);
         }
     }
 }

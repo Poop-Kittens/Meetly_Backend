@@ -1,6 +1,7 @@
 ﻿using Meetly_Backend.Common;
 using Meetly_Backend.Interfaces;
 using Meetly_Backend.Models;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.Data;
 
@@ -59,6 +60,29 @@ namespace Meetly_Backend.Services
             }
         }
 
+        public async Task<ServiceResult<string>> LogonAsync(LoginRequest request)
+        {
+            var user = await _userManager.FindByEmailAsync(request.Email);
+            if (user == null)//letar efter användare ifall dom redan finns eller ej
+            {
+
+                return ServiceResult.Invalid<string>("Användaren hittades inte");
+            }
+            var result = await _signInManager.PasswordSignInAsync(user, request.Password, isPersistent:true, lockoutOnFailure:true) ;//skapar och sätter cookie automatiskt och signar in
+            if (!result.Succeeded)
+            {
+                // Returnerar ett misslyckat ServiceResult med felmeddelande.
+                return ServiceResult.Invalid<string>("Fel användarnamn eller lösenord!");
+            }
+            else
+            {
+
+                // Returnerar ett lyckat ServiceResult med bekräftelse.
+                return ServiceResult.Ok("Inloggning lyckades");
+            }
+
+
+        }
 
     }
 }

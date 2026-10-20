@@ -18,15 +18,19 @@ namespace Meetly_Backend.Controllers
             _userService=userService;
         }
 
-        [HttpPost]
+        [HttpPost("Register")]
         public async Task<IActionResult> RegisterUser([FromBody]RegisterRequest request)
         {
             var user = await _userService.RegisterAsync(request);
-            if (user.Success)
-            {
-            return Ok(user.Data);
+           
+            return user.ToActionResult(this);
+        }
 
-            }
+        [HttpPost("Login")]
+        public async Task<IActionResult> Logon([FromBody]LoginRequest request)//from body innebär att det kommer från själva apianropets innehåll istället för typ URL
+        {
+            var user = await _userService.LogonAsync(request);
+           
             return user.ToActionResult(this);
         }
     }

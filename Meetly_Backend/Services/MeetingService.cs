@@ -124,6 +124,14 @@ namespace Meetly_Backend.Services
                 .ToListAsync();
         }
 
+        public async Task<ICollection<BasicMeetingResponse>> GetUserMeetingsAsync(string userId)
+        {
+            return await _ctx.Meetings
+                .Where(m => m.Participants.Any(p => p.UserId == userId))
+                .Select(Mappings.BasicMeetingExpr)
+                .ToListAsync();
+        }
+
         public async Task<ServiceResult<MeetingResponse>> SignUpAsync(int meetingId, string userId)
         {
             // Serializable så att två som anmäler sig till sista platsen samtidigt inte båda lyckas:
@@ -154,7 +162,7 @@ namespace Meetly_Backend.Services
                 return ServiceResult.Conflict<MeetingResponse>("This meeting is full, you cannot sign up.");
             }
 
-            _ctx.MeetingParticipants.Add(new MeetingParticipant
+            await _ctx.MeetingParticipants.AddAsync(new MeetingParticipant
             {
                 MeetingId = meetingId,
                 UserId = userId

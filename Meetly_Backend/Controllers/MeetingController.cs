@@ -72,5 +72,11 @@ namespace Meetly_Backend.Controllers
             var result = await _meetingService.SignUpAsync(id, userId);
             return Ok(result);
         }
+
+        [HttpGet("user/{userId}")]
+        public async Task<ActionResult<ICollection<BasicMeetingResponse>>> GetUser(string userId)
+        {
+            return Ok(await _meetingService.GetUserMeetingsAsync(userId));
+        }
     }
 }

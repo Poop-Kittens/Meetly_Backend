@@ -25,6 +25,22 @@ namespace Meetly_Backend.Services
                 .ToListAsync();
         }
 
+        public async Task<ServiceResult<MeetingResponse>> GetDetailsByIdAsync(int id)
+        {
+            var meeting = await _ctx.Meetings
+                 .AsNoTracking()
+                 .Where(m => m.Id == id)
+                 .Select(Mappings.MeetingExpr)
+                 .FirstOrDefaultAsync();
+
+            if (meeting is null)
+            {
+                return ServiceResult.NotFound<MeetingResponse>($"Meeting with id {id} was not found.");
+            }
+
+            return meeting;
+        }
+
         public async Task<ServiceResult> CreateMeetingAsync(CreateMeetingRequestDTO dto, string hostId)
         {
             if (dto.Date < DateTime.Now)

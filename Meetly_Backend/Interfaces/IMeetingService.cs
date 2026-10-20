@@ -6,6 +6,7 @@ namespace Meetly_Backend.Interfaces
     public interface IMeetingService
     {
         Task<ICollection<BasicMeetingResponse>> GetUpcomingMeetingsAsync();
+        Task<ServiceResult<MeetingResponse>> GetDetailsByIdAsync(int id);
         Task<ServiceResult> CreateMeetingAsync(CreateMeetingRequestDTO dto, string hostId);
     }
 }

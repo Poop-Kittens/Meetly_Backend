@@ -16,13 +16,13 @@ namespace Meetly_Backend.Mappers
 
         public static readonly Expression<Func<Meeting, BasicMeetingResponse>> BasicMeetingExpr =
             m => new BasicMeetingResponse(
-                m.Id.ToString(),
+                m.Id,
                 m.Title,
                 m.Date);
 
         public static readonly Expression<Func<Meeting, MeetingResponse>> MeetingExpr =
             m => new MeetingResponse(
-                m.Id.ToString(),
+                m.Id,
                 m.Title,
                 m.Description,
                 m.Location,
@@ -32,10 +32,7 @@ namespace Meetly_Backend.Mappers
                     .Select(p => new MeetingParticipantResponse(
                         p.Review,
                         p.Grade,
-                        new UserResponse(
-                            p.User.Id,
-                            p.User.UserName ?? string.Empty,
-                            p.User.Email ?? string.Empty)))
+                        p.User.UserName ?? ""))
                     .ToList(),
                 m.Categories.Select(c => c.Title).ToList(),
                 new UserResponse(

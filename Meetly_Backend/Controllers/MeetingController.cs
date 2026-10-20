@@ -78,5 +78,27 @@ namespace Meetly_Backend.Controllers
         {
             return Ok(await _meetingService.GetUserMeetingsAsync(userId));
         }
+
+        //DELETE-endpoint där id är meetupets ID
+        [Authorize]
+        [HttpDelete("Registration/{id}")]
+        public async Task<IActionResult> CancelRegistration(int id)
+        {
+            //hämtar den inloggade användarens id
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (userId == null)
+            {
+                return Unauthorized(); 
+            }
+
+            //anropar Service som hittar och tar bort användarens anmälan
+            var result = await _meetingService.CancelRegistrationAsync(id, userId);
+
+            //omvändlar resultatet frpn Service till ett HTTP-svar
+            return result.ToActionResult(this);
+
+
+        }
     }
 }

@@ -1,9 +1,11 @@
 ﻿using Meetly_Backend.Common;
 using Meetly_Backend.Interfaces;
 using Meetly_Backend.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.Data;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Meetly_Backend.Services
 {
@@ -82,6 +84,13 @@ namespace Meetly_Backend.Services
             }
 
 
+        }
+
+      
+        public async Task<ServiceResult<string>> LogoutAsync()//Använder sig av cookien som skapades innan. Därför behöver man inte ange en användare här
+        {
+             await _signInManager.SignOutAsync();
+            return ServiceResult.Ok("Utloggad");
         }
 
     }

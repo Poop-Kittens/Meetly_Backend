@@ -8,5 +8,7 @@ namespace Meetly_Backend.Interfaces
         Task<ServiceResult<string>> RegisterAsync(RegisterRequest request);
 
         Task<ServiceResult<string>> LogonAsync(LoginRequest request);
+
+        Task<ServiceResult<string>> LogoutAsync();
     }
 }

@@ -41,6 +41,12 @@ namespace Meetly_Backend.Mappers
                     m.Host.Email ?? string.Empty)
             );
 
+        public static Expression<Func<Meeting, SignUpInfo>> SignUpInfoExpr(string userId) =>
+                m => new SignUpInfo(
+                m.Date,
+                m.MaxAttendants - m.Participants.Count,
+                m.Participants.Any(p => p.UserId == userId));
+
         // ---- Extension methods: for mapping objects already in memory ----
         // (declared after the expressions so static initialization order works)
 

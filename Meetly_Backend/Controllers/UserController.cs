@@ -1,6 +1,7 @@
 ﻿using Meetly_Backend.Common;
 using Meetly_Backend.Interfaces;
 using Meetly_Backend.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
@@ -31,6 +32,14 @@ namespace Meetly_Backend.Controllers
         {
             var user = await _userService.LogonAsync(request);
            
+            return user.ToActionResult(this);
+        }
+
+        [Authorize]//detta för att endast inloggade personer ska kunna anropa endpointen
+        [HttpPost("Logout")]
+        public async Task<IActionResult> Logout()
+        {
+            var user = await _userService.LogoutAsync();
             return user.ToActionResult(this);
         }
     }

@@ -1,15 +1,10 @@
-﻿using Meetly_Backend.Data;
-using Meetly_Backend.DTOs;
-using Meetly_Backend.Common;
+﻿using Meetly_Backend.Common;
 using Meetly_Backend.Data;
 using Meetly_Backend.DTOs;
 using Meetly_Backend.Interfaces;
 using Meetly_Backend.Mappers;
-using Microsoft.EntityFrameworkCore;
 using Meetly_Backend.Models;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Mvc.Formatters.Xml;
-using System.Reflection;
 
 namespace Meetly_Backend.Services
 {
@@ -29,12 +24,6 @@ namespace Meetly_Backend.Services
                 .Select(Mappings.BasicMeetingExpr)
                 .ToListAsync();
         }
-        private readonly MeetlyDbContext _context;
-
-        public MeetingService(MeetlyDbContext context)
-        {
-            _context = context;
-        }
 
         public async Task<ServiceResult> CreateMeetingAsync(CreateMeetingRequestDTO dto, string hostId)
         {
@@ -47,7 +36,7 @@ namespace Meetly_Backend.Services
             //filtrerar fram rätt kategori
             //kollar att ID för kategorin finns
             //hämtar kategorierna som en lista
-            var categories = await _context.Categories
+            var categories = await _ctx.Categories
                 .Where(c => dto.CategoryIds.Contains(c.Id))
                 .ToListAsync();
 
@@ -71,10 +60,10 @@ namespace Meetly_Backend.Services
             };
 
             //lägger till ett nytt möte i databasen
-            _context.Meetings.Add(meeting);
+            _ctx.Meetings.Add(meeting);
 
             //sparar ändringarna i databasen
-            await _context.SaveChangesAsync();
+            await _ctx.SaveChangesAsync();
 
             //returnerar ett ServiceResult som visar att mötet skapades korrekt
             return ServiceResult.Ok();

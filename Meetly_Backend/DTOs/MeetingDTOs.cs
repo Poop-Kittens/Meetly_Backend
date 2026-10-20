@@ -14,4 +14,11 @@
     );
 
     public record MeetingParticipantResponse(string? Review, int? Grade, UserResponse User);
+
+    public record MeetingSearchRequest(
+        string? SearchTerm, // matches title or description
+        string? Location,
+        DateOnly? Date,
+        string? Category
+    );
 }

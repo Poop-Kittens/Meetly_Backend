@@ -20,5 +20,11 @@ namespace Meetly_Backend.Controllers
         {
             return Ok(await _meetingService.GetUpcomingMeetingsAsync());
         }
+
+        [HttpGet("search")]
+        public async Task<ActionResult<ICollection<BasicMeetingResponse>>> Search([FromQuery] MeetingSearchRequest request)
+        {
+            return Ok(await _meetingService.SearchMeetingsAsync(request));
+        }
     }
 }

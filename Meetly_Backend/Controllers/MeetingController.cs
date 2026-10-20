@@ -1,4 +1,5 @@
-﻿using Meetly_Backend.Interfaces;
+﻿using Meetly_Backend.DTOs;
+using Meetly_Backend.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,6 +14,12 @@ namespace Meetly_Backend.Controllers
         public MeetingController(IMeetingService meetingService)
         {
             _meetingService = meetingService;
+        }
+
+        [HttpGet("upcoming")]
+        public async Task<ActionResult<ICollection<BasicMeetingResponse>>> Upcoming()
+        {
+            return Ok(await _meetingService.GetUpcomingMeetingsAsync());
         }
 
         [HttpGet("{id}")]

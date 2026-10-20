@@ -3,7 +3,6 @@ using Meetly_Backend.DTOs;
 using Meetly_Backend.Interfaces;
 using Meetly_Backend.Models;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -27,6 +26,12 @@ namespace Meetly_Backend.Controllers
         public async Task<ActionResult<ICollection<BasicMeetingResponse>>> Upcoming()
         {
             return Ok(await _meetingService.GetUpcomingMeetingsAsync());
+        }
+
+        [HttpGet("search")]
+        public async Task<ActionResult<ICollection<BasicMeetingResponse>>> Search([FromQuery] MeetingSearchRequest request)
+        {
+            return Ok(await _meetingService.SearchMeetingsAsync(request));
         }
 
         [HttpGet("{id}")]

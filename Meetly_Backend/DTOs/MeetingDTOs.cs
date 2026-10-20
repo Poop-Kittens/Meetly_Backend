@@ -19,5 +19,12 @@
         string UserName
     );
 
+    public record MeetingSearchRequest(
+        string? SearchTerm, // matches title or description
+        string? Location,
+        DateOnly? Date,
+        string? Category
+    );
+
     public record SignUpInfo(DateTime Date, int RemainingSlots, bool AlreadyJoined);
 }

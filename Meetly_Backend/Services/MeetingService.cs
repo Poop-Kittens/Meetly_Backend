@@ -5,6 +5,7 @@ using Meetly_Backend.Interfaces;
 using Meetly_Backend.Mappers;
 using Meetly_Backend.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Data;
 
 namespace Meetly_Backend.Services
 {
@@ -121,6 +122,75 @@ namespace Meetly_Backend.Services
                 .OrderBy(m => m.Date)
                 .Select(Mappings.BasicMeetingExpr)
                 .ToListAsync();
+        }
+
+        public async Task<ICollection<BasicMeetingResponse>> GetUserMeetingsAsync(string userId)
+        {
+            return await _ctx.Meetings
+                .Where(m => m.Participants.Any(p => p.UserId == userId))
+                .Select(Mappings.BasicMeetingExpr)
+                .ToListAsync();
+        }
+
+        public async Task<ServiceResult<MeetingResponse>> SignUpAsync(int meetingId, string userId)
+        {
+            // Serializable så att två som anmäler sig till sista platsen samtidigt inte båda lyckas:
+            await using var tx = await _ctx.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+
+            var info = await _ctx.Meetings
+                .Where(m => m.Id == meetingId)
+                .Select(Mappings.SignUpInfoExpr(userId))
+                .FirstOrDefaultAsync();
+
+            if (info is null)
+            {
+                return ServiceResult.NotFound<MeetingResponse>($"Meeting with id {meetingId} was not found.");
+            }
+
+            if (info.Date < DateTime.UtcNow)
+            {
+                return ServiceResult.Invalid<MeetingResponse>("This meeting has already taken place.");
+            }
+
+            if (info.AlreadyJoined)
+            {
+                return ServiceResult.Conflict<MeetingResponse>("You are already signed up for this meeting.");
+            }
+
+            if (info.RemainingSlots <= 0)
+            {
+                return ServiceResult.Conflict<MeetingResponse>("This meeting is full, you cannot sign up.");
+            }
+
+            await _ctx.MeetingParticipants.AddAsync(new MeetingParticipant
+            {
+                MeetingId = meetingId,
+                UserId = userId
+            });
+
+            await _ctx.SaveChangesAsync();
+            await tx.CommitAsync();
+
+            return await GetDetailsByIdAsync(meetingId);
+        }
+
+        public async Task<ServiceResult> CancelRegistrationAsync(int meetingId, string userId)
+        {
+            //letar efter en anmälan som matchar, med rätt meetup och rätt användare
+            var registration = await _ctx.MeetingParticipants
+                .FirstOrDefaultAsync(mp => mp.MeetingId == meetingId && mp.UserId == userId);
+
+            //om ingen anmälan hittas
+            if (registration == null)
+            {
+                return ServiceResult.NotFound("Du har ingen anmälan till detta möte");
+            }
+
+            _ctx.MeetingParticipants.Remove(registration);
+
+            await _ctx.SaveChangesAsync();
+
+            return ServiceResult.Ok();
         }
     }
 }

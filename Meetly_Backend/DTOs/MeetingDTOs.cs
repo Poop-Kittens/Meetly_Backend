@@ -13,10 +13,5 @@
         UserResponse Host
     );
 
-    public record MeetingParticipantResponse(
-        string? Review,
-        int Grade,
-        UserResponse User,
-        MeetingResponse Meeting
-    );
+    public record MeetingParticipantResponse(string? Review, int? Grade, UserResponse User);
 }

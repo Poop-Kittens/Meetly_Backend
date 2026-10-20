@@ -6,5 +6,7 @@ namespace Meetly_Backend.Interfaces
     public interface IUserService
     {
         Task<ServiceResult<string>> RegisterAsync(RegisterRequest request);
+
+        Task<ServiceResult<string>> LogonAsync(LoginRequest request);
     }
 }

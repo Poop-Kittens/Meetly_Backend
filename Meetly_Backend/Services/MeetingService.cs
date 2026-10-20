@@ -5,6 +5,7 @@ using Meetly_Backend.Interfaces;
 using Meetly_Backend.Mappers;
 using Meetly_Backend.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Data;
 
 namespace Meetly_Backend.Services
 {
@@ -83,6 +84,94 @@ namespace Meetly_Backend.Services
 
             //returnerar ett ServiceResult som visar att mötet skapades korrekt
             return ServiceResult.Ok();
+        }
+
+        public async Task<ICollection<BasicMeetingResponse>> SearchMeetingsAsync(MeetingSearchRequest request)
+        {
+            IQueryable<Meeting> query = _ctx.Meetings.AsNoTracking();
+
+            if (!string.IsNullOrWhiteSpace(request.SearchTerm))
+            {
+                var term = request.SearchTerm.Trim();
+                query = query.Where(m =>
+                    m.Title.Contains(term) ||
+                    (m.Description != null && m.Description.Contains(term)));
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.Location))
+            {
+                var location = request.Location.Trim();
+                query = query.Where(m => m.Location.Contains(location));
+            }
+
+            if (request.Date is DateOnly date)
+            {
+                // Compare a day range so the time-of-day part of DateTime doesn't break equality
+                var start = date.ToDateTime(TimeOnly.MinValue);
+                var end = start.AddDays(1);
+                query = query.Where(m => m.Date >= start && m.Date < end);
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.Category))
+            {
+                var category = request.Category.Trim();
+                query = query.Where(m => m.Categories.Any(c => c.Title == category));
+            }
+
+            return await query
+                .OrderBy(m => m.Date)
+                .Select(Mappings.BasicMeetingExpr)
+                .ToListAsync();
+        }
+
+        public async Task<ICollection<BasicMeetingResponse>> GetUserMeetingsAsync(string userId)
+        {
+            return await _ctx.Meetings
+                .Where(m => m.Participants.Any(p => p.UserId == userId))
+                .Select(Mappings.BasicMeetingExpr)
+                .ToListAsync();
+        }
+
+        public async Task<ServiceResult<MeetingResponse>> SignUpAsync(int meetingId, string userId)
+        {
+            // Serializable så att två som anmäler sig till sista platsen samtidigt inte båda lyckas:
+            await using var tx = await _ctx.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+
+            var info = await _ctx.Meetings
+                .Where(m => m.Id == meetingId)
+                .Select(Mappings.SignUpInfoExpr(userId))
+                .FirstOrDefaultAsync();
+
+            if (info is null)
+            {
+                return ServiceResult.NotFound<MeetingResponse>($"Meeting with id {meetingId} was not found.");
+            }
+
+            if (info.Date < DateTime.UtcNow)
+            {
+                return ServiceResult.Invalid<MeetingResponse>("This meeting has already taken place.");
+            }
+
+            if (info.AlreadyJoined)
+            {
+                return ServiceResult.Conflict<MeetingResponse>("You are already signed up for this meeting.");
+            }
+
+            if (info.RemainingSlots <= 0)
+            {
+                return ServiceResult.Conflict<MeetingResponse>("This meeting is full, you cannot sign up.");
+            }
+
+            await _ctx.MeetingParticipants.AddAsync(new MeetingParticipant
+            {
+                MeetingId = meetingId,
+                UserId = userId
+            });
+
+            await _ctx.SaveChangesAsync();
+            await tx.CommitAsync();
+
+            return await GetDetailsByIdAsync(meetingId);
         }
 
         public async Task<ServiceResult> CancelRegistrationAsync(int meetingId, string userId)

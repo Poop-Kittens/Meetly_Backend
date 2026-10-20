@@ -15,8 +15,7 @@
 
     public record MeetingParticipantResponse(
         string? Review,
-        int Grade,
-        UserResponse User,
-        MeetingResponse Meeting
+        int? Grade,
+        string UserName
     );
 }

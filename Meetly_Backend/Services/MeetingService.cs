@@ -6,6 +6,7 @@ using Meetly_Backend.Mappers;
 using Meetly_Backend.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Data;
+using System.Security.Claims;
 
 namespace Meetly_Backend.Services
 {
@@ -130,6 +131,27 @@ namespace Meetly_Backend.Services
                 .Where(m => m.Participants.Any(p => p.UserId == userId))
                 .Select(Mappings.BasicMeetingExpr)
                 .ToListAsync();
+        }
+
+        public async Task<ServiceResult<MeetingParticipantResponse>> ReviewMeetingAsync(
+            MeetingReviewRequest request, string userId)
+        {
+            var participant = await _ctx.MeetingParticipants
+                .Include(p => p.User)
+                .FirstOrDefaultAsync(p => p.UserId == userId && p.MeetingId == request.MeetingId);
+
+            if (participant == null)
+            {
+                return ServiceResult.NotFound<MeetingParticipantResponse>(
+                    "Recensionen gick inte igenom");
+            }
+
+            participant.Review = request.Review;
+            participant.Grade = request.Grade;
+
+            await _ctx.SaveChangesAsync();
+
+            return ServiceResult.Ok(participant.ToResponse());
         }
 
         public async Task<ServiceResult<MeetingResponse>> SignUpAsync(int meetingId, string userId)

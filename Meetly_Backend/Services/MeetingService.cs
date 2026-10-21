@@ -22,6 +22,7 @@ namespace Meetly_Backend.Services
         public async Task<ICollection<BasicMeetingResponse>> GetUpcomingMeetingsAsync()
         {
             return await _ctx.Meetings
+                .AsNoTracking()
                 .Where(m => m.Date > DateTime.Now)
                 .Select(Mappings.BasicMeetingExpr)
                 .ToListAsync();
@@ -156,9 +157,6 @@ namespace Meetly_Backend.Services
 
         public async Task<ServiceResult<MeetingResponse>> SignUpAsync(int meetingId, string userId)
         {
-            // Serializable så att två som anmäler sig till sista platsen samtidigt inte båda lyckas:
-            await using var tx = await _ctx.Database.BeginTransactionAsync(IsolationLevel.Serializable);
-
             var info = await _ctx.Meetings
                 .Where(m => m.Id == meetingId)
                 .Select(Mappings.SignUpInfoExpr(userId))
@@ -191,7 +189,6 @@ namespace Meetly_Backend.Services
             });
 
             await _ctx.SaveChangesAsync();
-            await tx.CommitAsync();
 
             return await GetDetailsByIdAsync(meetingId);
         }

@@ -9,6 +9,7 @@ using System.Security.Claims;
 
 namespace Meetly_Backend.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class MeetingController : ControllerBase
@@ -41,36 +42,26 @@ namespace Meetly_Backend.Controllers
             return Ok(result.Data);
         }
 
-        [Authorize]
         [HttpPost("Create")]
-        public async Task<IActionResult> CreateMeeting([FromBody] CreateMeetingRequestDTO dto)
+        public async Task<ActionResult<MeetingResponse>> CreateMeeting([FromBody] CreateMeetingRequest dto)
         {
             //hämtar användarens ID
-            var hostId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            if (string.IsNullOrEmpty(hostId))
-            {
-                return Unauthorized("Användaren är inte inloggad.");
-            }
+            var hostId = _userManager.GetUserId(User);
 
             //anropar tjänsten för att skapa ett möte
-            var result = await _meetingService.CreateMeetingAsync(dto, hostId);
+            var result = await _meetingService.CreateMeetingAsync(dto, hostId!);
 
             //returnerar resultatet av tjänsten som ett ActionResult
             return result.ToActionResult(this);
         }
 
-        [Authorize]
         [HttpPost("{id}/SignUp")]
         public async Task<IActionResult> SignUp(int id)
         {
             var userId = _userManager.GetUserId(User); // Inbyggd metod i Microsoft Identity
-            if (userId == null)
-            {
-                return Unauthorized();
-            }
-            var result = await _meetingService.SignUpAsync(id, userId);
-            return Ok(result);
+            
+            var result = await _meetingService.SignUpAsync(id, userId!);
+            return Ok(result.Data);
         }
 
         [HttpGet("user/{userId}")]
@@ -79,37 +70,25 @@ namespace Meetly_Backend.Controllers
             return Ok(await _meetingService.GetUserMeetingsAsync(userId));
         }
 
-        [Authorize]
         [HttpPost("review")]
         public async Task<ActionResult<MeetingParticipantResponse>> AddReview(
             [FromQuery] MeetingReviewRequest request)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userId = _userManager.GetUserId(User);
 
-            if (userId is null)
-            {
-                return Unauthorized();
-            }
-
-            var result = await _meetingService.ReviewMeetingAsync(request, userId);
+            var result = await _meetingService.ReviewMeetingAsync(request, userId!);
             return result.ToActionResult(this);
         }
 
         //DELETE-endpoint där id är meetupets ID
-        [Authorize]
         [HttpDelete("Registration/{id}")]
         public async Task<IActionResult> CancelRegistration(int id)
         {
             //hämtar den inloggade användarens id
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            if (userId == null)
-            {
-                return Unauthorized(); 
-            }
+            var userId = _userManager.GetUserId(User);
 
             //anropar Service som hittar och tar bort användarens anmälan
-            var result = await _meetingService.CancelRegistrationAsync(id, userId);
+            var result = await _meetingService.CancelRegistrationAsync(id, userId!);
 
             //omvändlar resultatet frpn Service till ett HTTP-svarS
             return result.ToActionResult(this);

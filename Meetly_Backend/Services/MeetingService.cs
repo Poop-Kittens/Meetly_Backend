@@ -44,11 +44,11 @@ namespace Meetly_Backend.Services
             return meeting;
         }
 
-        public async Task<ServiceResult> CreateMeetingAsync(CreateMeetingRequestDTO dto, string hostId)
+        public async Task<ServiceResult<MeetingResponse>> CreateMeetingAsync(CreateMeetingRequest dto, string hostId)
         {
             if (dto.Date < DateTime.Now)
             {
-                return ServiceResult.Invalid("Mötets datum kan inte vara i det förflutna");
+                return ServiceResult.Invalid<MeetingResponse>("Mötets datum kan inte vara i det förflutna");
             }
 
             //går till kategorierna till databasen
@@ -63,7 +63,7 @@ namespace Meetly_Backend.Services
             //Kollar att alla valda kategorier finns i databasen, annars returneras ett felmeddelande
             if (categories.Count != dto.CategoryIds.Distinct().Count())
             {
-                return ServiceResult.Invalid("En eller flera av de angivna kategorierna finns inte.");
+                return ServiceResult.Invalid<MeetingResponse>("En eller flera av de angivna kategorierna finns inte.");
             }
 
             //omvandlar informationen från DTO:n till ett Meeting-objekt
@@ -85,7 +85,7 @@ namespace Meetly_Backend.Services
             await _ctx.SaveChangesAsync();
 
             //returnerar ett ServiceResult som visar att mötet skapades korrekt
-            return ServiceResult.Ok();
+            return ServiceResult.Ok(meeting.ToResponse());
         }
 
         public async Task<ICollection<BasicMeetingResponse>> SearchMeetingsAsync(MeetingSearchRequest request)
@@ -167,9 +167,9 @@ namespace Meetly_Backend.Services
                 return ServiceResult.NotFound<MeetingResponse>($"Meeting with id {meetingId} was not found.");
             }
 
-            if (info.Date < DateTime.UtcNow)
+            if (info.Date < DateTime.Now)
             {
-                return ServiceResult.Invalid<MeetingResponse>("This meeting has already taken place.");
+                return ServiceResult.Invalid<MeetingResponse>("Mötets datum kan inte vara i det förflutna");
             }
 
             if (info.AlreadyJoined)
@@ -181,7 +181,7 @@ namespace Meetly_Backend.Services
             {
                 return ServiceResult.Conflict<MeetingResponse>("This meeting is full, you cannot sign up.");
             }
-
+            
             await _ctx.MeetingParticipants.AddAsync(new MeetingParticipant
             {
                 MeetingId = meetingId,
@@ -197,6 +197,7 @@ namespace Meetly_Backend.Services
         {
             //letar efter en anmälan som matchar, med rätt meetup och rätt användare
             var registration = await _ctx.MeetingParticipants
+                .Where(mp => mp.Meeting.Date > DateTime.Now)
                 .FirstOrDefaultAsync(mp => mp.MeetingId == meetingId && mp.UserId == userId);
 
             //om ingen anmälan hittas
@@ -205,10 +206,6 @@ namespace Meetly_Backend.Services
                 return ServiceResult.NotFound("Du har ingen anmälan till detta möte");
             }
 
-            if (registration.Meeting.Date < DateTime.UtcNow)
-            {
-                return ServiceResult.Invalid("Mötet har redan ägt rum.");
-            }
 
             _ctx.MeetingParticipants.Remove(registration);
 

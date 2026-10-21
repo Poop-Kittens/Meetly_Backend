@@ -84,15 +84,16 @@ namespace Meetly_Backend.Common
             return MapError(result, controller);
         }
 
-        public static IActionResult ToActionResult<T>(this ServiceResult<T> result, ControllerBase controller,
-            Func<T, IActionResult>? onSuccess = null)
+        public static ActionResult<T> ToActionResult<T>(this ServiceResult<T> result, ControllerBase controller,
+        Func<T, ActionResult>? onSuccess = null)
         {
-            if (result.Success)
-                return onSuccess is not null ? onSuccess(result.Data!) : controller.Ok(result.Data);
-            return MapError(result, controller);
+            if (result.Failure) return MapError(result, controller);
+
+            if (onSuccess is not null) return onSuccess(result.Data!);
+            return result.Data!; // implicit conversion to ActionResult<T> => 200 with body
         }
 
-        private static IActionResult MapError(ServiceResult result, ControllerBase controller)
+        private static ActionResult MapError(ServiceResult result, ControllerBase controller)
         {
             switch (result.Error)
             {

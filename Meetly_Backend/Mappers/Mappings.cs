@@ -42,10 +42,16 @@ namespace Meetly_Backend.Mappers
             );
 
         public static Expression<Func<Meeting, SignUpInfo>> SignUpInfoExpr(string userId) =>
-                m => new SignUpInfo(
+            m => new SignUpInfo(
                 m.Date,
                 m.MaxAttendants - m.Participants.Count,
                 m.Participants.Any(p => p.UserId == userId));
+
+        public static readonly Expression<Func<MeetingParticipant, MeetingParticipantResponse>> ParticipantExpr =
+            p => new MeetingParticipantResponse(
+                p.Review,
+                p.Grade,
+                p.User.UserName ?? "");
 
         // ---- Extension methods: for mapping objects already in memory ----
         // (declared after the expressions so static initialization order works)
@@ -53,9 +59,11 @@ namespace Meetly_Backend.Mappers
         private static readonly Func<User, UserResponse> _user = UserExpr.Compile();
         private static readonly Func<Meeting, BasicMeetingResponse> _basicMeeting = BasicMeetingExpr.Compile();
         private static readonly Func<Meeting, MeetingResponse> _meeting = MeetingExpr.Compile();
+        private static readonly Func<MeetingParticipant, MeetingParticipantResponse> _participant = ParticipantExpr.Compile();
 
         public static UserResponse ToResponse(this User u) => _user(u);
         public static BasicMeetingResponse ToBasicResponse(this Meeting m) => _basicMeeting(m);
         public static MeetingResponse ToResponse(this Meeting m) => _meeting(m);
+        public static MeetingParticipantResponse ToResponse(this MeetingParticipant p) => _participant(p);
     }
 }

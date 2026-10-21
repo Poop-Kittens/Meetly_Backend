@@ -95,10 +95,8 @@ namespace Meetly_Backend.Controllers
             //anropar Service som hittar och tar bort användarens anmälan
             var result = await _meetingService.CancelRegistrationAsync(id, userId);
 
-            //omvändlar resultatet frpn Service till ett HTTP-svar
+            //omvändlar resultatet frpn Service till ett HTTP-svarS
             return result.ToActionResult(this);
-
-
         }
     }
 }

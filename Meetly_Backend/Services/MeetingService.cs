@@ -186,6 +186,11 @@ namespace Meetly_Backend.Services
                 return ServiceResult.NotFound("Du har ingen anmälan till detta möte");
             }
 
+            if (registration.Meeting.Date < DateTime.UtcNow)
+            {
+                return ServiceResult.Invalid("Mötet har redan ägt rum.");
+            }
+
             _ctx.MeetingParticipants.Remove(registration);
 
             await _ctx.SaveChangesAsync();

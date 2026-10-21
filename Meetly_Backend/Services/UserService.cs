@@ -62,7 +62,7 @@ namespace Meetly_Backend.Services
             }
         }
 
-        public async Task<ServiceResult<string>> LogonAsync(LoginRequest request)
+        public async Task<ServiceResult<string>> LoginAsync(LoginRequest request)
         {
             var user = await _userManager.FindByEmailAsync(request.Email);
             if (user == null)//letar efter användare ifall dom redan finns eller ej

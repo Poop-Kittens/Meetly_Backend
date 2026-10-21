@@ -79,6 +79,22 @@ namespace Meetly_Backend.Controllers
             return Ok(await _meetingService.GetUserMeetingsAsync(userId));
         }
 
+        [Authorize]
+        [HttpPost("review")]
+        public async Task<ActionResult<MeetingParticipantResponse>> AddReview(
+            [FromQuery] MeetingReviewRequest request)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (userId is null)
+            {
+                return Unauthorized();
+            }
+
+            var result = await _meetingService.ReviewMeetingAsync(request, userId);
+            return result.ToActionResult(this);
+        }
+
         //DELETE-endpoint där id är meetupets ID
         [Authorize]
         [HttpDelete("Registration/{id}")]

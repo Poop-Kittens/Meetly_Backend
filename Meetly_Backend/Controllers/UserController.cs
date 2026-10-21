@@ -1,8 +1,6 @@
 ﻿using Meetly_Backend.Common;
 using Meetly_Backend.Interfaces;
-using Meetly_Backend.Services;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,28 +14,26 @@ namespace Meetly_Backend.Controllers
 
         public UserController(IUserService userService)
         {
-            _userService=userService;
+            _userService = userService;
         }
 
         [HttpPost("Register")]
-        public async Task<IActionResult> RegisterUser([FromBody]RegisterRequest request)
+        public async Task<ActionResult<string>> RegisterUser([FromBody] RegisterRequest request)
         {
             var user = await _userService.RegisterAsync(request);
-           
             return user.ToActionResult(this);
         }
 
         [HttpPost("Login")]
-        public async Task<IActionResult> Logon([FromBody]LoginRequest request)//from body innebär att det kommer från själva apianropets innehåll istället för typ URL
+        public async Task<ActionResult<string>> Login([FromBody]LoginRequest request)//from body innebär att det kommer från själva apianropets innehåll istället för typ URL
         {
-            var user = await _userService.LogonAsync(request);
-           
+            var user = await _userService.LoginAsync(request);
             return user.ToActionResult(this);
         }
 
         [Authorize]//detta för att endast inloggade personer ska kunna anropa endpointen
         [HttpPost("Logout")]
-        public async Task<IActionResult> Logout()
+        public async Task<ActionResult<string>> Logout()
         {
             var user = await _userService.LogoutAsync();
             return user.ToActionResult(this);

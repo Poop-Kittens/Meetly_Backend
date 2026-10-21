@@ -1,4 +1,6 @@
-﻿namespace Meetly_Backend.DTOs
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace Meetly_Backend.DTOs
 {
     public record BasicMeetingResponse(int Id, string Title, DateTime Date);
     public record MeetingResponse(
@@ -24,6 +26,12 @@
         string? Location,
         DateOnly? Date,
         string? Category
+    );
+
+    public record MeetingReviewRequest(
+        [Required] int MeetingId,
+        [MaxLength(1000)] string? Review,
+        [Range(1, 5)] int? Grade
     );
 
     public record SignUpInfo(DateTime Date, int RemainingSlots, bool AlreadyJoined);

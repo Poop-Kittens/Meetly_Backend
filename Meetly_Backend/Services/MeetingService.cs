@@ -6,6 +6,7 @@ using Meetly_Backend.Mappers;
 using Meetly_Backend.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Data;
+using System.Security.Claims;
 
 namespace Meetly_Backend.Services
 {
@@ -21,6 +22,7 @@ namespace Meetly_Backend.Services
         public async Task<ICollection<BasicMeetingResponse>> GetUpcomingMeetingsAsync()
         {
             return await _ctx.Meetings
+                .AsNoTracking()
                 .Where(m => m.Date > DateTime.Now)
                 .Select(Mappings.BasicMeetingExpr)
                 .ToListAsync();
@@ -132,11 +134,29 @@ namespace Meetly_Backend.Services
                 .ToListAsync();
         }
 
+        public async Task<ServiceResult<MeetingParticipantResponse>> ReviewMeetingAsync(
+            MeetingReviewRequest request, string userId)
+        {
+            var participant = await _ctx.MeetingParticipants
+                .Include(p => p.User)
+                .FirstOrDefaultAsync(p => p.UserId == userId && p.MeetingId == request.MeetingId);
+
+            if (participant == null)
+            {
+                return ServiceResult.NotFound<MeetingParticipantResponse>(
+                    "Recensionen gick inte igenom");
+            }
+
+            participant.Review = request.Review;
+            participant.Grade = request.Grade;
+
+            await _ctx.SaveChangesAsync();
+
+            return ServiceResult.Ok(participant.ToResponse());
+        }
+
         public async Task<ServiceResult<MeetingResponse>> SignUpAsync(int meetingId, string userId)
         {
-            // Serializable så att två som anmäler sig till sista platsen samtidigt inte båda lyckas:
-            await using var tx = await _ctx.Database.BeginTransactionAsync(IsolationLevel.Serializable);
-
             var info = await _ctx.Meetings
                 .Where(m => m.Id == meetingId)
                 .Select(Mappings.SignUpInfoExpr(userId))
@@ -169,7 +189,6 @@ namespace Meetly_Backend.Services
             });
 
             await _ctx.SaveChangesAsync();
-            await tx.CommitAsync();
 
             return await GetDetailsByIdAsync(meetingId);
         }

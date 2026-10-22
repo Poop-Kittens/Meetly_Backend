@@ -1,4 +1,4 @@
-﻿using Meetly_Backend.Common;
+﻿using Meetly_Backend.Utils;
 using Meetly_Backend.Interfaces;
 using Meetly_Backend.Models;
 using Microsoft.AspNetCore.Authorization;

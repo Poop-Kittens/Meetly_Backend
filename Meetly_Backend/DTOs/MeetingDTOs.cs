@@ -57,6 +57,4 @@ namespace Meetly_Backend.DTOs
         [Range(1, int.MaxValue)] int MaxAttendants,
         [Required, MinLength(1)] List<int> CategoryIds
     );
-
-    public record SignUpInfo(DateTime Date, int RemainingSlots, bool AlreadyJoined);
 }

@@ -84,16 +84,8 @@ namespace Meetly_Backend.Controllers
         [HttpPut("{id}")]
         public async Task<ActionResult<MeetingResponse>> UpdateMeeting(int id, [FromBody] UpdateMeetingRequest dto)
         {
-            //hämtar den inloggade användarens id via identity
-            var hostId = _userManager.GetUserId(User);
-
-            if (hostId == null)
-            {
-                return Unauthorized("Användaren finns inte.");
-            }
-
             //anropar Service för att uppdatera mötet
-            var result = await _meetingService.UpdateMeetingAsync(id, dto, hostId);
+            var result = await _meetingService.UpdateMeetingAsync(id, dto, User.GetUserId());
 
             return result.ToActionResult(this);
         }

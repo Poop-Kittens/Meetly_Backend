@@ -26,7 +26,7 @@ namespace Meetly_Backend.Controllers
         }
 
         [HttpPost("Login")]
-        public async Task<ActionResult<string>> Login([FromQuery]LoginRequest request)//from body innebär att det kommer från själva apianropets innehåll istället för typ URL
+        public async Task<ActionResult<string>> Login([FromBody]LoginRequest request)//from body innebär att det kommer från själva apianropets innehåll istället för typ URL
         {
             var user = await _userService.LoginAsync(request);
             return user.ToActionResult(this);

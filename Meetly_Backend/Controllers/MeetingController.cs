@@ -93,5 +93,23 @@ namespace Meetly_Backend.Controllers
             //omvändlar resultatet frpn Service till ett HTTP-svarS
             return result.ToActionResult(this);
         }
+
+        //PUT-endpoint för att uppdatera ett möte
+        [HttpPut("{id}")]
+        public async Task<ActionResult<MeetingResponse>> UpdateMeeting(int id, [FromBody] UpdateMeetingRequest dto)
+        {
+            //hämtar den inloggade användarens id via identity
+            var hostId = _userManager.GetUserId(User);
+
+            if (hostId == null)
+            {
+                return Unauthorized("Användaren finns inte.");
+            }
+
+            //anropar Service för att uppdatera mötet
+            var result = await _meetingService.UpdateMeetingAsync(id, dto, hostId);
+
+            return result.ToActionResult(this);
+        }
     }
 }

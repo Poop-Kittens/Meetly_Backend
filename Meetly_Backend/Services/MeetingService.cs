@@ -5,6 +5,7 @@ using Meetly_Backend.Mappers;
 using Meetly_Backend.Models;
 using Meetly_Backend.Utils;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Identity.Client;
 using System.Data;
 
 namespace Meetly_Backend.Services
@@ -225,6 +226,11 @@ namespace Meetly_Backend.Services
             await _ctx.SaveChangesAsync();
 
             return ServiceResult.Ok();
+        }
+        public async Task<ICollection<CategoryResponse>> GetAllCategoriesAsync()
+        {
+            return await _ctx.Categories.AsNoTracking().Select(Mappings.CategoryExpr).ToListAsync();
+     
         }
     }
 }

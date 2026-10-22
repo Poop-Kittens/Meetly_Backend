@@ -42,8 +42,8 @@ builder.Services.ConfigureApplicationCookie(options =>
 {
     options.Cookie.Name = "meetly.auth";
     options.Cookie.HttpOnly = true;
+    options.Cookie.SameSite = SameSiteMode.None;
     options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-    options.Cookie.SameSite = SameSiteMode.Lax;
     options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
     options.SlidingExpiration = true;
 
@@ -99,8 +99,9 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.UseAuthentication();
+app.UseCors("ReactPolicy");
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

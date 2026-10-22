@@ -38,7 +38,7 @@ namespace Meetly_Backend.Services
 
             if (meeting is null)
             {
-                return ServiceResult.NotFound<MeetingResponse>($"Möte med id {id} hittades inte.");
+                return ServiceResult.NotFound<MeetingResponse>($"Mötet med id {id} hittades inte.");
             }
 
             return meeting;
@@ -173,7 +173,7 @@ namespace Meetly_Backend.Services
 
             if (info is null)
             {
-                return ServiceResult.NotFound<MeetingResponse>($"Möte med id {meetingId} hittades inte.");
+                return ServiceResult.NotFound<MeetingResponse>($"Mötet med id {meetingId} hittades inte.");
             }
 
             if (info.Date < DateTime.Now)

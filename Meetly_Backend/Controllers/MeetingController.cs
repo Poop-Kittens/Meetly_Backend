@@ -48,10 +48,13 @@ namespace Meetly_Backend.Controllers
                 m => CreatedAtAction(nameof(GetById), new { id = m.Id }, m));
         }
 
-        [HttpPost("{id:int}/registration")]
-        public async Task<ActionResult<MeetingResponse>> SignUp(int id)
+        //PUT-endpoint för att uppdatera ett möte
+        [HttpPut("{id}")]
+        public async Task<ActionResult<MeetingResponse>> UpdateMeeting(int id, [FromBody] UpdateMeetingRequest dto)
         {
-            var result = await _meetingService.SignUpAsync(id, User.GetUserId());
+            //anropar Service för att uppdatera mötet
+            var result = await _meetingService.UpdateMeetingAsync(id, dto, User.GetUserId());
+
             return result.ToActionResult(this);
         }
 
@@ -61,11 +64,10 @@ namespace Meetly_Backend.Controllers
             return Ok(await _meetingService.GetUserMeetingsAsync(User.GetUserId()));
         }
 
-        [HttpPut("{id:int}/review")]
-        public async Task<ActionResult<MeetingParticipantResponse>> AddReview(
-            int id, [FromQuery] MeetingReviewRequest request)
+        [HttpPost("{id:int}/registration")]
+        public async Task<ActionResult<MeetingResponse>> SignUp(int id)
         {
-            var result = await _meetingService.ReviewMeetingAsync(id, request, User.GetUserId());
+            var result = await _meetingService.SignUpAsync(id, User.GetUserId());
             return result.ToActionResult(this);
         }
 
@@ -80,21 +82,18 @@ namespace Meetly_Backend.Controllers
             return result.ToActionResult(this);
         }
 
+        [HttpPut("{id:int}/review")]
+        public async Task<ActionResult<MeetingParticipantResponse>> AddReview(
+            int id, [FromQuery] MeetingReviewRequest request)
+        {
+            var result = await _meetingService.ReviewMeetingAsync(id, request, User.GetUserId());
+            return result.ToActionResult(this);
+        }
+
         [HttpGet("categories")]
         public async Task<ActionResult<ICollection<CategoryResponse>>> GetAllCategories()
         {
            return Ok(await _meetingService.GetAllCategoriesAsync());
-           
-        }
-
-        //PUT-endpoint för att uppdatera ett möte
-        [HttpPut("{id}")]
-        public async Task<ActionResult<MeetingResponse>> UpdateMeeting(int id, [FromBody] UpdateMeetingRequest dto)
-        {
-            //anropar Service för att uppdatera mötet
-            var result = await _meetingService.UpdateMeetingAsync(id, dto, User.GetUserId());
-
-            return result.ToActionResult(this);
         }
     }
 }

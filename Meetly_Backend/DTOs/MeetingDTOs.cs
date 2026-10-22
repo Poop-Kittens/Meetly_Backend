@@ -52,7 +52,7 @@ namespace Meetly_Backend.DTOs
 
     public record CategoryResponse(
         int Id,
-        string Tilte
+        string Title
      );
     public record UpdateMeetingRequest(
         [Required, MaxLength(50)] string Title,

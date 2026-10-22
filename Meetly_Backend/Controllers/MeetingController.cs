@@ -84,7 +84,7 @@ namespace Meetly_Backend.Controllers
 
         [HttpPut("{id:int}/review")]
         public async Task<ActionResult<MeetingParticipantResponse>> AddReview(
-            int id, [FromQuery] MeetingReviewRequest request)
+            int id, [FromBody] MeetingReviewRequest request)
         {
             var result = await _meetingService.ReviewMeetingAsync(id, request, User.GetUserId());
             return result.ToActionResult(this);

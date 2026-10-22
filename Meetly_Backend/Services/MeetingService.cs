@@ -261,5 +261,7 @@ namespace Meetly_Backend.Services
             return await GetDetailsByIdAsync(meetingId);
 
         }
+
+        
     }
 }

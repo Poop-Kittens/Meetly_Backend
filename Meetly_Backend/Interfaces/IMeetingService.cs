@@ -14,5 +14,6 @@ namespace Meetly_Backend.Interfaces
         Task<ServiceResult<MeetingParticipantResponse>> ReviewMeetingAsync(MeetingReviewRequest request, string userId);
         Task<ServiceResult> CancelRegistrationAsync(int meetingId, string userId);
         Task<ServiceResult<MeetingResponse>> UpdateMeetingAsync(int meetingId, UpdateMeetingRequest dto, string hostId);
+       
     }
 }

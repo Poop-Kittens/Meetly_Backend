@@ -1,11 +1,8 @@
-﻿using Meetly_Backend.Common;
-using Meetly_Backend.DTOs;
+﻿using Meetly_Backend.DTOs;
 using Meetly_Backend.Interfaces;
-using Meetly_Backend.Models;
+using Meetly_Backend.Utils;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace Meetly_Backend.Controllers
 {
@@ -15,12 +12,10 @@ namespace Meetly_Backend.Controllers
     public class MeetingController : ControllerBase
     {
         private readonly IMeetingService _meetingService;
-        private readonly UserManager<User> _userManager;
 
-        public MeetingController(IMeetingService meetingService, UserManager<User> userManager)
+        public MeetingController(IMeetingService meetingService)
         {
             _meetingService = meetingService;
-            _userManager = userManager;
         }
 
         [HttpGet("upcoming")]
@@ -36,59 +31,50 @@ namespace Meetly_Backend.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetById(int id)
+        public async Task<ActionResult<MeetingResponse>> GetById(int id)
         {
             var result = await _meetingService.GetDetailsByIdAsync(id);
-            return Ok(result.Data);
-        }
-
-        [HttpPost("Create")]
-        public async Task<ActionResult<MeetingResponse>> CreateMeeting([FromBody] CreateMeetingRequest dto)
-        {
-            //hämtar användarens ID
-            var hostId = _userManager.GetUserId(User);
-
-            //anropar tjänsten för att skapa ett möte
-            var result = await _meetingService.CreateMeetingAsync(dto, hostId!);
-
-            //returnerar resultatet av tjänsten som ett ActionResult
             return result.ToActionResult(this);
         }
 
-        [HttpPost("{id}/SignUp")]
-        public async Task<IActionResult> SignUp(int id)
+        [HttpPost]
+        public async Task<ActionResult<MeetingResponse>> CreateMeeting([FromBody] CreateMeetingRequest request)
         {
-            var userId = _userManager.GetUserId(User); // Inbyggd metod i Microsoft Identity
-            
-            var result = await _meetingService.SignUpAsync(id, userId!);
-            return Ok(result.Data);
+            //anropar tjänsten för att skapa ett möte
+            var result = await _meetingService.CreateMeetingAsync(request, User.GetUserId());
+
+            //returnerar resultatet av tjänsten som ett ActionResult
+            return result.ToActionResult(this,
+                m => CreatedAtAction(nameof(GetById), new { id = m.Id }, m));
         }
 
-        [HttpGet("user/{userId}")]
-        public async Task<ActionResult<ICollection<BasicMeetingResponse>>> GetUser(string userId)
+        [HttpPost("{id:int}/registration")]
+        public async Task<ActionResult<MeetingResponse>> SignUp(int id)
         {
-            return Ok(await _meetingService.GetUserMeetingsAsync(userId));
+            var result = await _meetingService.SignUpAsync(id, User.GetUserId());
+            return result.ToActionResult(this);
         }
 
-        [HttpPost("review")]
+        [HttpGet("user")]
+        public async Task<ActionResult<ICollection<BasicMeetingResponse>>> GetUser()
+        {
+            return Ok(await _meetingService.GetUserMeetingsAsync(User.GetUserId()));
+        }
+
+        [HttpPut("{id:int}/review")]
         public async Task<ActionResult<MeetingParticipantResponse>> AddReview(
-            [FromQuery] MeetingReviewRequest request)
+            int id, [FromQuery] MeetingReviewRequest request)
         {
-            var userId = _userManager.GetUserId(User);
-
-            var result = await _meetingService.ReviewMeetingAsync(request, userId!);
+            var result = await _meetingService.ReviewMeetingAsync(id, request, User.GetUserId());
             return result.ToActionResult(this);
         }
 
         //DELETE-endpoint där id är meetupets ID
-        [HttpDelete("Registration/{id}")]
+        [HttpDelete("{id:int}/registration")]
         public async Task<IActionResult> CancelRegistration(int id)
         {
-            //hämtar den inloggade användarens id
-            var userId = _userManager.GetUserId(User);
-
             //anropar Service som hittar och tar bort användarens anmälan
-            var result = await _meetingService.CancelRegistrationAsync(id, userId!);
+            var result = await _meetingService.CancelRegistrationAsync(id, User.GetUserId());
 
             //omvändlar resultatet frpn Service till ett HTTP-svarS
             return result.ToActionResult(this);

@@ -45,7 +45,8 @@ namespace Meetly_Backend.Mappers
             m => new SignUpInfo(
                 m.Date,
                 m.MaxAttendants - m.Participants.Count,
-                m.Participants.Any(p => p.UserId == userId));
+                m.Participants.Any(p => p.UserId == userId),
+                m.HostId == userId);
 
         public static readonly Expression<Func<MeetingParticipant, MeetingParticipantResponse>> ParticipantExpr =
             p => new MeetingParticipantResponse(

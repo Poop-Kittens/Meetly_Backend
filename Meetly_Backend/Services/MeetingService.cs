@@ -1,12 +1,11 @@
-﻿using Meetly_Backend.Common;
-using Meetly_Backend.Data;
+﻿using Meetly_Backend.Data;
 using Meetly_Backend.DTOs;
 using Meetly_Backend.Interfaces;
 using Meetly_Backend.Mappers;
 using Meetly_Backend.Models;
+using Meetly_Backend.Utils;
 using Microsoft.EntityFrameworkCore;
 using System.Data;
-using System.Security.Claims;
 
 namespace Meetly_Backend.Services
 {
@@ -24,6 +23,7 @@ namespace Meetly_Backend.Services
             return await _ctx.Meetings
                 .AsNoTracking()
                 .Where(m => m.Date > DateTime.Now)
+                .OrderBy(m => m.Date)
                 .Select(Mappings.BasicMeetingExpr)
                 .ToListAsync();
         }
@@ -85,7 +85,7 @@ namespace Meetly_Backend.Services
             await _ctx.SaveChangesAsync();
 
             //returnerar ett ServiceResult som visar att mötet skapades korrekt
-            return ServiceResult.Ok(meeting.ToResponse());
+            return await GetDetailsByIdAsync(meeting.Id);
         }
 
         public async Task<ICollection<BasicMeetingResponse>> SearchMeetingsAsync(MeetingSearchRequest request)
@@ -129,22 +129,23 @@ namespace Meetly_Backend.Services
         public async Task<ICollection<BasicMeetingResponse>> GetUserMeetingsAsync(string userId)
         {
             return await _ctx.Meetings
-                .Where(m => m.Participants.Any(p => p.UserId == userId))
+                .AsNoTracking()
+                .Where(m => m.Participants.Any(p => p.UserId == userId) || m.HostId == userId)
                 .Select(Mappings.BasicMeetingExpr)
                 .ToListAsync();
         }
 
         public async Task<ServiceResult<MeetingParticipantResponse>> ReviewMeetingAsync(
-            MeetingReviewRequest request, string userId)
+            int meetingId, MeetingReviewRequest request, string userId)
         {
             var participant = await _ctx.MeetingParticipants
                 .Include(p => p.User)
-                .FirstOrDefaultAsync(p => p.UserId == userId && p.MeetingId == request.MeetingId);
+                .FirstOrDefaultAsync(p => p.UserId == userId && p.MeetingId == meetingId);
 
             if (participant == null)
             {
                 return ServiceResult.NotFound<MeetingParticipantResponse>(
-                    "Recensionen gick inte igenom");
+                    "You're not a participant of this meeting");
             }
 
             participant.Review = request.Review;
@@ -158,6 +159,7 @@ namespace Meetly_Backend.Services
         public async Task<ServiceResult<MeetingResponse>> SignUpAsync(int meetingId, string userId)
         {
             var info = await _ctx.Meetings
+                .AsNoTracking()
                 .Where(m => m.Id == meetingId)
                 .Select(Mappings.SignUpInfoExpr(userId))
                 .FirstOrDefaultAsync();
@@ -172,6 +174,11 @@ namespace Meetly_Backend.Services
                 return ServiceResult.Invalid<MeetingResponse>("Mötets datum kan inte vara i det förflutna");
             }
 
+            if (info.IsHost)
+            {
+                return ServiceResult.Invalid<MeetingResponse>("You are already the host of this meeting.");
+            }
+
             if (info.AlreadyJoined)
             {
                 return ServiceResult.Conflict<MeetingResponse>("You are already signed up for this meeting.");
@@ -181,8 +188,8 @@ namespace Meetly_Backend.Services
             {
                 return ServiceResult.Conflict<MeetingResponse>("This meeting is full, you cannot sign up.");
             }
-            
-            await _ctx.MeetingParticipants.AddAsync(new MeetingParticipant
+
+            _ctx.MeetingParticipants.Add(new MeetingParticipant
             {
                 MeetingId = meetingId,
                 UserId = userId
@@ -205,7 +212,6 @@ namespace Meetly_Backend.Services
             {
                 return ServiceResult.NotFound("Du har ingen anmälan till detta möte");
             }
-
 
             _ctx.MeetingParticipants.Remove(registration);
 

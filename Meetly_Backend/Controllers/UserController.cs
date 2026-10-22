@@ -1,5 +1,5 @@
-﻿using Meetly_Backend.Common;
-using Meetly_Backend.Interfaces;
+﻿using Meetly_Backend.Interfaces;
+using Meetly_Backend.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;

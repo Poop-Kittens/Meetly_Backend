@@ -1,4 +1,4 @@
-﻿using Meetly_Backend.Common;
+﻿using Meetly_Backend.Utils;
 using Microsoft.AspNetCore.Identity.Data;
 
 namespace Meetly_Backend.Interfaces

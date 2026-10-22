@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 
-namespace Meetly_Backend.Common
+namespace Meetly_Backend.Utils
 {
     public enum ServiceError
     {

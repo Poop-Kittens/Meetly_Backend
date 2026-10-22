@@ -1,4 +1,5 @@
-﻿using Meetly_Backend.Interfaces;
+﻿using Meetly_Backend.DTOs;
+using Meetly_Backend.Interfaces;
 using Meetly_Backend.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity.Data;
@@ -37,6 +38,14 @@ namespace Meetly_Backend.Controllers
         {
             var user = await _userService.LogoutAsync();
             return user.ToActionResult(this);
+        }
+
+        [Authorize]
+        [HttpGet("me")]
+        public async Task<ActionResult<UserResponse>> Me()
+        {
+            var result = await _userService.GetCurrentUserAsync(User.GetUserId());
+            return result.ToActionResult(this);
         }
     }
 }

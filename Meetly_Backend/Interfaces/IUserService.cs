@@ -1,4 +1,5 @@
-﻿using Meetly_Backend.Utils;
+﻿using Meetly_Backend.DTOs;
+using Meetly_Backend.Utils;
 using Microsoft.AspNetCore.Identity.Data;
 
 namespace Meetly_Backend.Interfaces
@@ -8,5 +9,6 @@ namespace Meetly_Backend.Interfaces
         Task<ServiceResult<string>> RegisterAsync(RegisterRequest request);
         Task<ServiceResult<string>> LoginAsync(LoginRequest request);
         Task<ServiceResult<string>> LogoutAsync();
+        Task<ServiceResult<UserResponse>> GetCurrentUserAsync(string userId);
     }
 }

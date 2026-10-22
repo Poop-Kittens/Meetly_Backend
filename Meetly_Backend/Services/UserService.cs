@@ -1,4 +1,6 @@
-﻿using Meetly_Backend.Interfaces;
+﻿using Meetly_Backend.DTOs;
+using Meetly_Backend.Interfaces;
+using Meetly_Backend.Mappers;
 using Meetly_Backend.Models;
 using Meetly_Backend.Utils;
 using Microsoft.AspNetCore.Identity;
@@ -81,6 +83,18 @@ namespace Meetly_Backend.Services
         {
              await _signInManager.SignOutAsync();
             return ServiceResult.Ok("Utloggad");
+        }
+
+        public async Task<ServiceResult<UserResponse>> GetCurrentUserAsync(string userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+
+            if (user is null)
+            {
+                return ServiceResult.NotFound<UserResponse>("Användaren hittades inte.");
+            }
+
+            return user.ToResponse(); // extension-metoden finns i Mappings
         }
     }
 }

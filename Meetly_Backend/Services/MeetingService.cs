@@ -139,6 +139,7 @@ namespace Meetly_Backend.Services
             int meetingId, MeetingReviewRequest request, string userId)
         {
             var participant = await _ctx.MeetingParticipants
+                .Include(p => p.Meeting)
                 .Include(p => p.User)
                 .FirstOrDefaultAsync(p => p.UserId == userId && p.MeetingId == meetingId);
 
@@ -146,6 +147,12 @@ namespace Meetly_Backend.Services
             {
                 return ServiceResult.NotFound<MeetingParticipantResponse>(
                     "You're not a participant of this meeting");
+            }
+
+            if (participant.Meeting.Date > DateTime.Now)
+            {
+                return ServiceResult.Invalid<MeetingParticipantResponse>(
+                    "Du kan inte recensera ett möte som inte har ägt rum än.");
             }
 
             participant.Review = request.Review;

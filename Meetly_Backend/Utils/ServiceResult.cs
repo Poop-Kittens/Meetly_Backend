@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 
-namespace Meetly_Backend.Common
+namespace Meetly_Backend.Utils
 {
     public enum ServiceError
     {
@@ -36,24 +36,24 @@ namespace Meetly_Backend.Common
 
         // ---------- Failures (non-generic) ----------
         public static ServiceResult Fail(ServiceError error, string message) => new(false, error, message);
-        public static ServiceResult NotFound(string message = "Resource not found.") => Fail(ServiceError.NotFound, message);
+        public static ServiceResult NotFound(string message = "Resurs kunde inte hittas.") => Fail(ServiceError.NotFound, message);
         public static ServiceResult Conflict(string message) => Fail(ServiceError.Conflict, message);
-        public static ServiceResult Forbidden(string message = "You are not allowed to do this.") => Fail(ServiceError.Forbidden, message);
-        public static ServiceResult Unauthorized(string message = "Authentication required.") => Fail(ServiceError.Unauthorized, message);
+        public static ServiceResult Forbidden(string message = "Du saknar behörighet.") => Fail(ServiceError.Forbidden, message);
+        public static ServiceResult Unauthorized(string message = "Autentisering krävs.") => Fail(ServiceError.Unauthorized, message);
         public static ServiceResult Invalid(string message) => Fail(ServiceError.Validation, message);
         public static ServiceResult Invalid(IDictionary<string, string[]> errors) =>
-            new(false, ServiceError.Validation, "One or more validation errors occurred.",
+            new(false, ServiceError.Validation, "Ett eller flera valideringsfel inträffade.",
                 new Dictionary<string, string[]>(errors));
 
         // ---------- Failures (generic) ----------
         public static ServiceResult<T> Fail<T>(ServiceError error, string message) => new(error, message);
-        public static ServiceResult<T> NotFound<T>(string message = "Resource not found.") => Fail<T>(ServiceError.NotFound, message);
+        public static ServiceResult<T> NotFound<T>(string message = "Resurs kunde inte hittas.") => Fail<T>(ServiceError.NotFound, message);
         public static ServiceResult<T> Conflict<T>(string message) => Fail<T>(ServiceError.Conflict, message);
-        public static ServiceResult<T> Forbidden<T>(string message = "You are not allowed to do this.") => Fail<T>(ServiceError.Forbidden, message);
-        public static ServiceResult<T> Unauthorized<T>(string message = "Authentication required.") => Fail<T>(ServiceError.Unauthorized, message);
+        public static ServiceResult<T> Forbidden<T>(string message = "Du saknar behörighet.") => Fail<T>(ServiceError.Forbidden, message);
+        public static ServiceResult<T> Unauthorized<T>(string message = "Autentisering krävs.") => Fail<T>(ServiceError.Unauthorized, message);
         public static ServiceResult<T> Invalid<T>(string message) => Fail<T>(ServiceError.Validation, message);
         public static ServiceResult<T> Invalid<T>(IDictionary<string, string[]> errors) =>
-            new(ServiceError.Validation, "One or more validation errors occurred.",
+            new(ServiceError.Validation, "Ett eller flera valideringsfel inträffade.",
                 new Dictionary<string, string[]>(errors));
     }
 
@@ -84,15 +84,16 @@ namespace Meetly_Backend.Common
             return MapError(result, controller);
         }
 
-        public static IActionResult ToActionResult<T>(this ServiceResult<T> result, ControllerBase controller,
-            Func<T, IActionResult>? onSuccess = null)
+        public static ActionResult<T> ToActionResult<T>(this ServiceResult<T> result, ControllerBase controller,
+        Func<T, ActionResult>? onSuccess = null)
         {
-            if (result.Success)
-                return onSuccess is not null ? onSuccess(result.Data!) : controller.Ok(result.Data);
-            return MapError(result, controller);
+            if (result.Failure) return MapError(result, controller);
+
+            if (onSuccess is not null) return onSuccess(result.Data!);
+            return result.Data!; // implicit conversion to ActionResult<T> => 200 with body
         }
 
-        private static IActionResult MapError(ServiceResult result, ControllerBase controller)
+        private static ActionResult MapError(ServiceResult result, ControllerBase controller)
         {
             switch (result.Error)
             {

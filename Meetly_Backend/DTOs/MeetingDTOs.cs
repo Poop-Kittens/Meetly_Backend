@@ -54,4 +54,12 @@ namespace Meetly_Backend.DTOs
         int Id,
         string Title
      );
+    public record UpdateMeetingRequest(
+        [Required, MaxLength(50)] string Title,
+        [MaxLength(300)] string? Description,
+        [Required] string Location,
+        DateTime Date,
+        [Range(1, int.MaxValue)] int MaxAttendants,
+        [Required, MinLength(1)] List<int> CategoryIds
+    );
 }

@@ -232,5 +232,55 @@ namespace Meetly_Backend.Services
             return await _ctx.Categories.AsNoTracking().Select(Mappings.CategoryExpr).ToListAsync();
      
         }
+
+        public async Task<ServiceResult<MeetingResponse>> UpdateMeetingAsync(int meetingId, UpdateMeetingRequest dto, string hostId)
+        {
+            var meeting = await _ctx.Meetings
+                .Include(m => m.Categories)
+                .FirstOrDefaultAsync(m => m.Id == meetingId);
+
+            if (meeting == null)
+            {
+                return ServiceResult.NotFound<MeetingResponse>($"Mötet med id {meetingId} hittades inte.");
+            }
+
+            if (meeting.HostId != hostId)
+            {
+                return ServiceResult.Forbidden<MeetingResponse>("Du har inte behörighet att uppdatera detta möte.");
+            }
+
+            meeting.Title = dto.Title;
+            meeting.Description = dto.Description;
+            meeting.Location = dto.Location;
+            meeting.Date = dto.Date;
+            meeting.MaxAttendants = dto.MaxAttendants;
+
+            // Hämtar kategorierna från databasen baserat på de angivna ID:erna
+            var categories = await _ctx.Categories
+                .Where(c => dto.CategoryIds.Contains(c.Id))
+                .ToListAsync();
+
+            meeting.Categories = categories;
+
+            if (dto.Date < DateTime.Now)
+            {
+                return ServiceResult.Invalid<MeetingResponse>("Mötets datum kan inte redan ha passerats");
+            }
+
+            var participantsCount = await _ctx.MeetingParticipants
+                .CountAsync(p => p.MeetingId == meetingId);
+
+            if (dto.MaxAttendants < participantsCount)
+            {
+                return ServiceResult.Invalid<MeetingResponse>("Max antal deltagare kan inte vara mindre än antalet redan anmälda deltagare.");
+            }
+
+            await _ctx.SaveChangesAsync();
+
+            return await GetDetailsByIdAsync(meetingId);
+
+        }
+
+        
     }
 }

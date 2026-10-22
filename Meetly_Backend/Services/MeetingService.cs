@@ -38,7 +38,7 @@ namespace Meetly_Backend.Services
 
             if (meeting is null)
             {
-                return ServiceResult.NotFound<MeetingResponse>($"Meeting with id {id} was not found.");
+                return ServiceResult.NotFound<MeetingResponse>($"Möte med id {id} hittades inte.");
             }
 
             return meeting;
@@ -145,7 +145,7 @@ namespace Meetly_Backend.Services
             if (participant == null)
             {
                 return ServiceResult.NotFound<MeetingParticipantResponse>(
-                    "You're not a participant of this meeting");
+                    "Du har inte deltagit i det här mötet.");
             }
 
             participant.Review = request.Review;
@@ -166,7 +166,7 @@ namespace Meetly_Backend.Services
 
             if (info is null)
             {
-                return ServiceResult.NotFound<MeetingResponse>($"Meeting with id {meetingId} was not found.");
+                return ServiceResult.NotFound<MeetingResponse>($"Möte med id {meetingId} hittades inte.");
             }
 
             if (info.Date < DateTime.Now)
@@ -176,17 +176,17 @@ namespace Meetly_Backend.Services
 
             if (info.IsHost)
             {
-                return ServiceResult.Invalid<MeetingResponse>("You are already the host of this meeting.");
+                return ServiceResult.Invalid<MeetingResponse>("Du är redan värd för det här mötet.");
             }
 
             if (info.AlreadyJoined)
             {
-                return ServiceResult.Conflict<MeetingResponse>("You are already signed up for this meeting.");
+                return ServiceResult.Conflict<MeetingResponse>("Du har redan anmält dig till det här mötet.");
             }
 
             if (info.RemainingSlots <= 0)
             {
-                return ServiceResult.Conflict<MeetingResponse>("This meeting is full, you cannot sign up.");
+                return ServiceResult.Conflict<MeetingResponse>("Det här mötet är redan fullbokat.");
             }
 
             _ctx.MeetingParticipants.Add(new MeetingParticipant

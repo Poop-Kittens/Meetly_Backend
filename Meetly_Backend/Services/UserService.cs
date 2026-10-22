@@ -1,11 +1,8 @@
-﻿using Meetly_Backend.Utils;
-using Meetly_Backend.Interfaces;
+﻿using Meetly_Backend.Interfaces;
 using Meetly_Backend.Models;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http.HttpResults;
+using Meetly_Backend.Utils;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.Data;
-using Microsoft.AspNetCore.Mvc;
 
 namespace Meetly_Backend.Services
 {
@@ -26,7 +23,6 @@ namespace Meetly_Backend.Services
             // Sparar referenserna så att de kan användas i servicen.
             _signInManager = signInManager;
             _userManager = userManager;
-
         }
 
         // Asynkron metod som registrerar en ny användare.
@@ -56,7 +52,6 @@ namespace Meetly_Backend.Services
             }
             else
             {
-
                 // Returnerar ett lyckat ServiceResult med bekräftelse.
                 return ServiceResult.Ok("Du är registrerad");
             }
@@ -67,7 +62,6 @@ namespace Meetly_Backend.Services
             var user = await _userManager.FindByEmailAsync(request.Email);
             if (user == null)//letar efter användare ifall dom redan finns eller ej
             {
-
                 return ServiceResult.Invalid<string>("Användaren hittades inte");
             }
             var result = await _signInManager.PasswordSignInAsync(user, request.Password, isPersistent:true, lockoutOnFailure:true) ;//skapar och sätter cookie automatiskt och signar in
@@ -78,20 +72,15 @@ namespace Meetly_Backend.Services
             }
             else
             {
-
                 // Returnerar ett lyckat ServiceResult med bekräftelse.
                 return ServiceResult.Ok("Inloggning lyckades");
             }
-
-
         }
 
-      
         public async Task<ServiceResult<string>> LogoutAsync()//Använder sig av cookien som skapades innan. Därför behöver man inte ange en användare här
         {
              await _signInManager.SignOutAsync();
             return ServiceResult.Ok("Utloggad");
         }
-
     }
 }

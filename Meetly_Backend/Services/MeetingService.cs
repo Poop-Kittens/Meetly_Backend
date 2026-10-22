@@ -5,7 +5,6 @@ using Meetly_Backend.Mappers;
 using Meetly_Backend.Models;
 using Meetly_Backend.Utils;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Identity.Client;
 using System.Data;
 
 namespace Meetly_Backend.Services
@@ -24,6 +23,44 @@ namespace Meetly_Backend.Services
             return await _ctx.Meetings
                 .AsNoTracking()
                 .Where(m => m.Date > DateTime.Now)
+                .OrderBy(m => m.Date)
+                .Select(Mappings.BasicMeetingExpr)
+                .ToListAsync();
+        }
+
+        public async Task<ICollection<BasicMeetingResponse>> SearchMeetingsAsync(MeetingSearchRequest request)
+        {
+            IQueryable<Meeting> query = _ctx.Meetings.AsNoTracking();
+
+            if (!string.IsNullOrWhiteSpace(request.SearchTerm))
+            {
+                var term = request.SearchTerm.Trim();
+                query = query.Where(m =>
+                    m.Title.Contains(term) ||
+                    (m.Description != null && m.Description.Contains(term)));
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.Location))
+            {
+                var location = request.Location.Trim();
+                query = query.Where(m => m.Location.Contains(location));
+            }
+
+            if (request.Date is DateOnly date)
+            {
+                // Compare a day range so the time-of-day part of DateTime doesn't break equality
+                var start = date.ToDateTime(TimeOnly.MinValue);
+                var end = start.AddDays(1);
+                query = query.Where(m => m.Date >= start && m.Date < end);
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.Category))
+            {
+                var category = request.Category.Trim();
+                query = query.Where(m => m.Categories.Any(c => c.Title == category));
+            }
+
+            return await query
                 .OrderBy(m => m.Date)
                 .Select(Mappings.BasicMeetingExpr)
                 .ToListAsync();
@@ -89,42 +126,52 @@ namespace Meetly_Backend.Services
             return await GetDetailsByIdAsync(meeting.Id);
         }
 
-        public async Task<ICollection<BasicMeetingResponse>> SearchMeetingsAsync(MeetingSearchRequest request)
+        public async Task<ServiceResult<MeetingResponse>> UpdateMeetingAsync(
+            int meetingId, UpdateMeetingRequest request, string hostId)
         {
-            IQueryable<Meeting> query = _ctx.Meetings.AsNoTracking();
+            var meeting = await _ctx.Meetings
+                .Include(m => m.Categories)
+                .FirstOrDefaultAsync(m => m.Id == meetingId);
 
-            if (!string.IsNullOrWhiteSpace(request.SearchTerm))
+            if (meeting == null)
             {
-                var term = request.SearchTerm.Trim();
-                query = query.Where(m =>
-                    m.Title.Contains(term) ||
-                    (m.Description != null && m.Description.Contains(term)));
+                return ServiceResult.NotFound<MeetingResponse>($"Mötet med id {meetingId} hittades inte.");
             }
 
-            if (!string.IsNullOrWhiteSpace(request.Location))
+            if (meeting.HostId != hostId)
             {
-                var location = request.Location.Trim();
-                query = query.Where(m => m.Location.Contains(location));
+                return ServiceResult.Forbidden<MeetingResponse>("Du har inte behörighet att uppdatera detta möte.");
             }
 
-            if (request.Date is DateOnly date)
-            {
-                // Compare a day range so the time-of-day part of DateTime doesn't break equality
-                var start = date.ToDateTime(TimeOnly.MinValue);
-                var end = start.AddDays(1);
-                query = query.Where(m => m.Date >= start && m.Date < end);
-            }
+            meeting.Title = request.Title;
+            meeting.Description = request.Description;
+            meeting.Location = request.Location;
+            meeting.Date = request.Date;
+            meeting.MaxAttendants = request.MaxAttendants;
 
-            if (!string.IsNullOrWhiteSpace(request.Category))
-            {
-                var category = request.Category.Trim();
-                query = query.Where(m => m.Categories.Any(c => c.Title == category));
-            }
-
-            return await query
-                .OrderBy(m => m.Date)
-                .Select(Mappings.BasicMeetingExpr)
+            // Hämtar kategorierna från databasen baserat på de angivna ID:erna
+            var categories = await _ctx.Categories
+                .Where(c => request.CategoryIds.Contains(c.Id))
                 .ToListAsync();
+
+            meeting.Categories = categories;
+
+            if (request.Date < DateTime.Now)
+            {
+                return ServiceResult.Invalid<MeetingResponse>("Mötets datum kan inte redan ha passerats");
+            }
+
+            var participantsCount = await _ctx.MeetingParticipants
+                .CountAsync(p => p.MeetingId == meetingId);
+
+            if (request.MaxAttendants < participantsCount)
+            {
+                return ServiceResult.Invalid<MeetingResponse>("Max antal deltagare kan inte vara mindre än antalet redan anmälda deltagare.");
+            }
+
+            await _ctx.SaveChangesAsync();
+
+            return await GetDetailsByIdAsync(meetingId);
         }
 
         public async Task<ICollection<BasicMeetingResponse>> GetUserMeetingsAsync(string userId)
@@ -134,34 +181,6 @@ namespace Meetly_Backend.Services
                 .Where(m => m.Participants.Any(p => p.UserId == userId) || m.HostId == userId)
                 .Select(Mappings.BasicMeetingExpr)
                 .ToListAsync();
-        }
-
-        public async Task<ServiceResult<MeetingParticipantResponse>> ReviewMeetingAsync(
-            int meetingId, MeetingReviewRequest request, string userId)
-        {
-            var participant = await _ctx.MeetingParticipants
-                .Include(p => p.Meeting)
-                .Include(p => p.User)
-                .FirstOrDefaultAsync(p => p.UserId == userId && p.MeetingId == meetingId);
-
-            if (participant == null)
-            {
-                return ServiceResult.NotFound<MeetingParticipantResponse>(
-                    "Du har inte deltagit i det här mötet.");
-            }
-
-            if (participant.Meeting.Date > DateTime.Now)
-            {
-                return ServiceResult.Invalid<MeetingParticipantResponse>(
-                    "Du kan inte recensera ett möte som inte har ägt rum än.");
-            }
-
-            participant.Review = request.Review;
-            participant.Grade = request.Grade;
-
-            await _ctx.SaveChangesAsync();
-
-            return ServiceResult.Ok(participant.ToResponse());
         }
 
         public async Task<ServiceResult<MeetingResponse>> SignUpAsync(int meetingId, string userId)
@@ -228,6 +247,34 @@ namespace Meetly_Backend.Services
             return ServiceResult.Ok();
         }
 
+        public async Task<ServiceResult<MeetingParticipantResponse>> ReviewMeetingAsync(
+            int meetingId, MeetingReviewRequest request, string userId)
+        {
+            var participant = await _ctx.MeetingParticipants
+                .Include(p => p.Meeting)
+                .Include(p => p.User)
+                .FirstOrDefaultAsync(p => p.UserId == userId && p.MeetingId == meetingId);
+
+            if (participant == null)
+            {
+                return ServiceResult.NotFound<MeetingParticipantResponse>(
+                    "Du har inte deltagit i det här mötet.");
+            }
+
+            if (participant.Meeting.Date > DateTime.Now)
+            {
+                return ServiceResult.Invalid<MeetingParticipantResponse>(
+                    "Du kan inte recensera ett möte som inte har ägt rum än.");
+            }
+
+            participant.Review = request.Review;
+            participant.Grade = request.Grade;
+
+            await _ctx.SaveChangesAsync();
+
+            return ServiceResult.Ok(participant.ToResponse());
+        }
+
         public async Task<ICollection<CategoryResponse>> GetAllCategoriesAsync()
         {
             return await _ctx.Categories
@@ -235,55 +282,5 @@ namespace Meetly_Backend.Services
                 .Select(Mappings.CategoryExpr)
                 .ToListAsync();
         }
-
-        public async Task<ServiceResult<MeetingResponse>> UpdateMeetingAsync(int meetingId, UpdateMeetingRequest dto, string hostId)
-        {
-            var meeting = await _ctx.Meetings
-                .Include(m => m.Categories)
-                .FirstOrDefaultAsync(m => m.Id == meetingId);
-
-            if (meeting == null)
-            {
-                return ServiceResult.NotFound<MeetingResponse>($"Mötet med id {meetingId} hittades inte.");
-            }
-
-            if (meeting.HostId != hostId)
-            {
-                return ServiceResult.Forbidden<MeetingResponse>("Du har inte behörighet att uppdatera detta möte.");
-            }
-
-            meeting.Title = dto.Title;
-            meeting.Description = dto.Description;
-            meeting.Location = dto.Location;
-            meeting.Date = dto.Date;
-            meeting.MaxAttendants = dto.MaxAttendants;
-
-            // Hämtar kategorierna från databasen baserat på de angivna ID:erna
-            var categories = await _ctx.Categories
-                .Where(c => dto.CategoryIds.Contains(c.Id))
-                .ToListAsync();
-
-            meeting.Categories = categories;
-
-            if (dto.Date < DateTime.Now)
-            {
-                return ServiceResult.Invalid<MeetingResponse>("Mötets datum kan inte redan ha passerats");
-            }
-
-            var participantsCount = await _ctx.MeetingParticipants
-                .CountAsync(p => p.MeetingId == meetingId);
-
-            if (dto.MaxAttendants < participantsCount)
-            {
-                return ServiceResult.Invalid<MeetingResponse>("Max antal deltagare kan inte vara mindre än antalet redan anmälda deltagare.");
-            }
-
-            await _ctx.SaveChangesAsync();
-
-            return await GetDetailsByIdAsync(meetingId);
-
-        }
-
-        
     }
 }

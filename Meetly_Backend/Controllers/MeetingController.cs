@@ -80,6 +80,13 @@ namespace Meetly_Backend.Controllers
             return result.ToActionResult(this);
         }
 
+        [HttpGet("categories")]
+        public async Task<ActionResult<ICollection<CategoryResponse>>> GetAllCategories()
+        {
+           return Ok(await _meetingService.GetAllCategoriesAsync());
+           
+        }
+
         //PUT-endpoint för att uppdatera ett möte
         [HttpPut("{id}")]
         public async Task<ActionResult<MeetingResponse>> UpdateMeeting(int id, [FromBody] UpdateMeetingRequest dto)

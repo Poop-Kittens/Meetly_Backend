@@ -49,6 +49,11 @@ namespace Meetly_Backend.DTOs
         bool AlreadyJoined,
         bool IsHost
     );
+
+    public record CategoryResponse(
+        int Id,
+        string Tilte
+     );
     public record UpdateMeetingRequest(
         [Required, MaxLength(50)] string Title,
         [MaxLength(300)] string? Description,

@@ -52,6 +52,6 @@ namespace Meetly_Backend.DTOs
 
     public record CategoryResponse(
         int Id,
-        string Tilte
+        string Title
      );
 }

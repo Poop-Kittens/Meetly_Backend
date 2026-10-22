@@ -13,7 +13,6 @@ namespace Meetly_Backend.Interfaces
         Task<ICollection<BasicMeetingResponse>> GetUserMeetingsAsync(string userId);
         Task<ServiceResult<MeetingParticipantResponse>> ReviewMeetingAsync(int meetingId, MeetingReviewRequest request, string userId);
         Task<ServiceResult> CancelRegistrationAsync(int meetingId, string userId);
-
         Task<ICollection<CategoryResponse>> GetAllCategoriesAsync();
     }
 }

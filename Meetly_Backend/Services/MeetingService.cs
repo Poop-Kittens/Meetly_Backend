@@ -227,10 +227,13 @@ namespace Meetly_Backend.Services
 
             return ServiceResult.Ok();
         }
+
         public async Task<ICollection<CategoryResponse>> GetAllCategoriesAsync()
         {
-            return await _ctx.Categories.AsNoTracking().Select(Mappings.CategoryExpr).ToListAsync();
-     
+            return await _ctx.Categories
+                .AsNoTracking()
+                .Select(Mappings.CategoryExpr)
+                .ToListAsync();
         }
     }
 }

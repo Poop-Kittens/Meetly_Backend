@@ -54,6 +54,11 @@ namespace Meetly_Backend.Mappers
                 p.Grade,
                 p.User.UserName ?? "");
 
+        public static readonly Expression<Func<Category, CategoryResponse>> CategoryExpr =
+           c => new CategoryResponse(
+               c.Id,
+               c.Title);
+
         // ---- Extension methods: for mapping objects already in memory ----
         // (declared after the expressions so static initialization order works)
 

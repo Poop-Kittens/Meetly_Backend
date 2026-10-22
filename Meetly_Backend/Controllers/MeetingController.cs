@@ -79,5 +79,12 @@ namespace Meetly_Backend.Controllers
             //omvändlar resultatet frpn Service till ett HTTP-svarS
             return result.ToActionResult(this);
         }
+
+        [HttpGet("categories")]
+        public async Task<ActionResult<ICollection<CategoryResponse>>> GetAllCategories()
+        {
+           return Ok(await _meetingService.GetAllCategoriesAsync());
+           
+        }
     }
 }

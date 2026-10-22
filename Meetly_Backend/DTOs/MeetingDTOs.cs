@@ -49,4 +49,9 @@ namespace Meetly_Backend.DTOs
         bool AlreadyJoined,
         bool IsHost
     );
+
+    public record CategoryResponse(
+        int Id,
+        string Tilte
+     );
 }

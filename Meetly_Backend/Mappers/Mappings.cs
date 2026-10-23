@@ -18,7 +18,12 @@ namespace Meetly_Backend.Mappers
             m => new BasicMeetingResponse(
                 m.Id,
                 m.Title,
-                m.Date);
+                m.Date,
+                m.Location,
+                m.MaxAttendants - m.Participants.Count,
+                m.Categories.Select(c => c.Title).ToList()
+                );
+
 
         public static readonly Expression<Func<Meeting, MeetingResponse>> MeetingExpr =
             m => new MeetingResponse(

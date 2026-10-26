@@ -7,12 +7,10 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var connectionName = builder.Environment.IsDevelopment() ? "DevConnection" : "DefaultConnection";
-
 // Add services to the container.
 builder.Services.AddDbContext<MeetlyDbContext>(options =>
 {
-    options.UseSqlServer(builder.Configuration.GetConnectionString(connectionName),
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"),
         sqlOptions => sqlOptions.EnableRetryOnFailure(
             maxRetryCount: 2,
             maxRetryDelay: TimeSpan.FromSeconds(30),
@@ -72,7 +70,9 @@ builder.Services.AddCors(options =>
     options.AddPolicy("ReactPolicy", policy =>
     {
         policy
-            .WithOrigins("http://localhost:5173")
+            .WithOrigins(
+            "https://meetly-frontend-a9g6b7gvhdd2afga.switzerlandnorth-01.azurewebsites.net",
+            "http://localhost:5173")
             .AllowCredentials()
             .AllowAnyHeader()
             .AllowAnyMethod();

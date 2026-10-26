@@ -1,77 +1,77 @@
 ﻿name: Meetly_Backend_CI
 
 on:
-    push:
-        branches:
-            - main
+  push:
+    branches:
+      - main
 
 env:
-    APP_NAME: Meetly-Backend
-    IMAGE_NAME: meetly_backend
+  APP_NAME: Meetly-Backend
+  IMAGE_NAME: meetly_backend
 
 jobs:
-    build-and-test:
-        runs-on: ubuntu-latest
-        defaults:
-            run:
-                working-directory: ./Meetly_Backend
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v3
+  build-and-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./Meetly_Backend
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-            - name: Set up .NET
-              uses: actions/setup-dotnet@v4
-              with:
-                  dotnet-version: 10.0.x
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
 
-            - name: Restore dependencies
-              run: dotnet restore
+      - name: Restore dependencies
+        run: dotnet restore
 
-            - name: Build project
-              run: dotnet build --no-restore
+      - name: Build project
+        run: dotnet build --no-restore
 
-            - name: Login to Docker Hub
-              uses: docker/login-action@v3
-              with:
-                  username: ${{secrets.DOCKER_USERNAME}}
-                  password: ${{secrets.DOCKER_TOKEN}}
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{secrets.DOCKER_USERNAME}}
+          password: ${{secrets.DOCKER_TOKEN}}
 
-            - name: Build Docker image
-              run: docker build -t ${{secrets.DOCKER_USERNAME}}/${{env.IMAGE_NAME}}:${{github.sha}} .
+      - name: Build Docker image
+        run: docker build -t ${{secrets.DOCKER_USERNAME}}/${{env.IMAGE_NAME}}:${{github.sha}} .
 
-            - name: Push Docker image
-              run: docker push ${{secrets.DOCKER_USERNAME}}/${{env.IMAGE_NAME}}:${{github.sha}}
+      - name: Push Docker image
+        run: docker push ${{secrets.DOCKER_USERNAME}}/${{env.IMAGE_NAME}}:${{github.sha}}
 
-            - name: Install EF Core tools
-              run: dotnet tool install --global dotnet-ef
+      - name: Install EF Core tools
+        run: dotnet tool install --global dotnet-ef --version 10.*
 
-            - name: Generate migration script
-              run: dotnet ef migrations script --idempotent -o migrate.sql
-              env:
-                  ConnectionStrings__DefaultConnection: "Server=localhost;Database=dummy;"
+      - name: Generate migration script
+        run: dotnet ef migrations script --idempotent -o migrate.sql
+        env:
+          ConnectionStrings__DefaultConnection: "Server=localhost;Database=dummy;"
 
-            - name: Apply migrations to Azure SQL
-              id: migrate
-              continue-on-error: true
-              uses: azure/sql-action@v2.3
-              with:
-                  connection-string: ${{secrets.AZURE_SQL_CONNECTION_STRING}}
-                  path: ./Meetly_Backend/migrate.sql
+      - name: Apply migrations to Azure SQL
+        id: migrate
+        continue-on-error: true
+        uses: azure/sql-action@v2.3
+        with:
+          connection-string: ${{secrets.AZURE_SQL_CONNECTION_STRING}}
+          path: ./Meetly_Backend/migrate.sql
 
-            - name: Wait for database to resume
-              if: steps.migrate.outcome == 'failure'
-              run: sleep 60
+      - name: Wait for database to resume
+        if: steps.migrate.outcome == 'failure'
+        run: sleep 60
 
-            - name: Apply migrations to Azure SQL (retry)
-              if: steps.migrate.outcome == 'failure'
-              uses: azure/sql-action@v2.3
-              with:
-                  connection-string: ${{secrets.AZURE_SQL_CONNECTION_STRING}}
-                  path: ./Meetly_Backend/migrate.sql
+      - name: Apply migrations to Azure SQL (retry)
+        if: steps.migrate.outcome == 'failure'
+        uses: azure/sql-action@v2.3
+        with:
+          connection-string: ${{secrets.AZURE_SQL_CONNECTION_STRING}}
+          path: ./Meetly_Backend/migrate.sql
 
-            - name: Deploy to Azure Web App
-              uses: azure/webapps-deploy@v3
-              with:
-                  app-name: ${{env.APP_NAME}}
-                  publish-profile: ${{secrets.AZURE_WEBAPP_PUBLISH_PROFILE}}
-                  images: ${{secrets.DOCKER_USERNAME}}/${{env.IMAGE_NAME}}:${{github.sha}}
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{env.APP_NAME}}
+          publish-profile: ${{secrets.AZURE_WEBAPP_PUBLISH_PROFILE}}
+          images: ${{secrets.DOCKER_USERNAME}}/${{env.IMAGE_NAME}}:${{github.sha}}

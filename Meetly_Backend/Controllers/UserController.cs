@@ -1,4 +1,5 @@
-﻿using Meetly_Backend.Interfaces;
+﻿using Meetly_Backend.DTOs;
+using Meetly_Backend.Interfaces;
 using Meetly_Backend.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity.Data;
@@ -18,14 +19,14 @@ namespace Meetly_Backend.Controllers
         }
 
         [HttpPost("Register")]
-        public async Task<ActionResult<string>> RegisterUser([FromQuery] RegisterRequest request)
+        public async Task<ActionResult<string>> RegisterUser([FromBody] UserRegister request)
         {
             var user = await _userService.RegisterAsync(request);
             return user.ToActionResult(this);
         }
 
         [HttpPost("Login")]
-        public async Task<ActionResult<string>> Login([FromQuery]LoginRequest request)//from body innebär att det kommer från själva apianropets innehåll istället för typ URL
+        public async Task<ActionResult<string>> Login([FromBody]LoginRequest request)//from body innebär att det kommer från själva apianropets innehåll istället för typ URL
         {
             var user = await _userService.LoginAsync(request);
             return user.ToActionResult(this);
@@ -37,6 +38,14 @@ namespace Meetly_Backend.Controllers
         {
             var user = await _userService.LogoutAsync();
             return user.ToActionResult(this);
+        }
+
+        [Authorize]
+        [HttpGet("me")]
+        public async Task<ActionResult<UserResponse>> Me()
+        {
+            var result = await _userService.GetCurrentUserAsync(User.GetUserId());
+            return result.ToActionResult(this);
         }
     }
 }

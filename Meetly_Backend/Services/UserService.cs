@@ -1,4 +1,6 @@
-﻿using Meetly_Backend.Interfaces;
+﻿using Meetly_Backend.DTOs;
+using Meetly_Backend.Interfaces;
+using Meetly_Backend.Mappers;
 using Meetly_Backend.Models;
 using Meetly_Backend.Utils;
 using Microsoft.AspNetCore.Identity;
@@ -28,13 +30,13 @@ namespace Meetly_Backend.Services
         // Asynkron metod som registrerar en ny användare.
         // Tar emot RegisterRequest med e-postadress och lösenord.
         // Returnerar ServiceResult<string> med resultatet av registreringen.
-        public async Task<ServiceResult<string>> RegisterAsync(RegisterRequest request)
+        public async Task<ServiceResult<string>> RegisterAsync(UserRegister request)
         {
             // Skapar ett nytt User-objekt.
             // Användarens e-post används även som användarnamn.
             var user = new User
             {
-                UserName = request.Email,
+                UserName = request.UserName,
                 Email = request.Email
             };
 
@@ -48,13 +50,12 @@ namespace Meetly_Backend.Services
             if (!result.Succeeded)
             {
                 // Returnerar ett misslyckat ServiceResult med felmeddelande.
-                return ServiceResult.Invalid<string>("Registreringen misslyckades!");
+                var errors = string.Join(" ", result.Errors.Select(e => e.Description));
+                return ServiceResult.Invalid<string>($"Registreringen misslyckades: {errors}");
             }
-            else
-            {
-                // Returnerar ett lyckat ServiceResult med bekräftelse.
-                return ServiceResult.Ok("Du är registrerad");
-            }
+
+            // Returnerar ett lyckat ServiceResult med bekräftelse.
+            return ServiceResult.Ok("Du är registrerad");
         }
 
         public async Task<ServiceResult<string>> LoginAsync(LoginRequest request)
@@ -64,7 +65,7 @@ namespace Meetly_Backend.Services
             {
                 return ServiceResult.Invalid<string>("Användaren hittades inte");
             }
-            var result = await _signInManager.PasswordSignInAsync(user, request.Password, isPersistent:true, lockoutOnFailure:true) ;//skapar och sätter cookie automatiskt och signar in
+            var result = await _signInManager.PasswordSignInAsync(user, request.Password, isPersistent: true, lockoutOnFailure: true);//skapar och sätter cookie automatiskt och signar in
             if (!result.Succeeded)
             {
                 // Returnerar ett misslyckat ServiceResult med felmeddelande.
@@ -79,8 +80,20 @@ namespace Meetly_Backend.Services
 
         public async Task<ServiceResult<string>> LogoutAsync()//Använder sig av cookien som skapades innan. Därför behöver man inte ange en användare här
         {
-             await _signInManager.SignOutAsync();
+            await _signInManager.SignOutAsync();
             return ServiceResult.Ok("Utloggad");
+        }
+
+        public async Task<ServiceResult<UserResponse>> GetCurrentUserAsync(string userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+
+            if (user is null)
+            {
+                return ServiceResult.NotFound<UserResponse>("Användaren hittades inte.");
+            }
+
+            return user.ToResponse(); // extension-metoden finns i Mappings
         }
     }
 }

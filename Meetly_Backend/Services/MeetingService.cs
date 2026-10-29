@@ -22,7 +22,7 @@ namespace Meetly_Backend.Services
         {
             return await _ctx.Meetings
                 .AsNoTracking()
-                .Where(m => m.Date > DateTime.Now)
+                .Where(m => m.Date > DateTime.UtcNow)
                 .OrderBy(m => m.Date)
                 .Select(Mappings.BasicMeetingExpr)
                 .ToListAsync();
@@ -84,7 +84,7 @@ namespace Meetly_Backend.Services
 
         public async Task<ServiceResult<MeetingResponse>> CreateMeetingAsync(CreateMeetingRequest dto, string hostId)
         {
-            if (dto.Date < DateTime.Now)
+            if (dto.Date < DateTime.UtcNow)
             {
                 return ServiceResult.Invalid<MeetingResponse>("Mötets datum kan inte vara i det förflutna");
             }
@@ -156,7 +156,7 @@ namespace Meetly_Backend.Services
 
             meeting.Categories = categories;
 
-            if (request.Date < DateTime.Now)
+            if (request.Date < DateTime.UtcNow)
             {
                 return ServiceResult.Invalid<MeetingResponse>("Mötets datum kan inte redan ha passerats");
             }
@@ -196,7 +196,7 @@ namespace Meetly_Backend.Services
                 return ServiceResult.NotFound<MeetingResponse>($"Mötet med id {meetingId} hittades inte.");
             }
 
-            if (info.Date < DateTime.Now)
+            if (info.Date < DateTime.UtcNow)
             {
                 return ServiceResult.Invalid<MeetingResponse>("Mötets datum kan inte vara i det förflutna");
             }
@@ -231,7 +231,7 @@ namespace Meetly_Backend.Services
         {
             //letar efter en anmälan som matchar, med rätt meetup och rätt användare
             var registration = await _ctx.MeetingParticipants
-                .Where(mp => mp.Meeting.Date > DateTime.Now)
+                .Where(mp => mp.Meeting.Date > DateTime.UtcNow)
                 .FirstOrDefaultAsync(mp => mp.MeetingId == meetingId && mp.UserId == userId);
 
             //om ingen anmälan hittas
@@ -261,7 +261,7 @@ namespace Meetly_Backend.Services
                     "Du har inte deltagit i det här mötet.");
             }
 
-            if (participant.Meeting.Date > DateTime.Now)
+            if (participant.Meeting.Date > DateTime.UtcNow)
             {
                 return ServiceResult.Invalid<MeetingParticipantResponse>(
                     "Du kan inte recensera ett möte som inte har ägt rum än.");

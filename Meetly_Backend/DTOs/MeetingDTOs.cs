@@ -2,7 +2,14 @@
 
 namespace Meetly_Backend.DTOs
 {
-    public record BasicMeetingResponse(int Id, string Title, DateTime Date, string Location, int RemainingSlots, List<string> Categories);
+    public record BasicMeetingResponse(
+        int Id,
+        string Title,
+        DateTime Date,
+        string Location,
+        int RemainingSlots,
+        List<string> Categories
+    );
 
     public record MeetingResponse(
         int Id,
